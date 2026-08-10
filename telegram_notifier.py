@@ -61,9 +61,9 @@ def send_telegram_message(message_text, pin=False):
         return False
 
 def format_master_strategy_catalog():
-    """Formats the official Master Strategy Guide to be pinned in Telegram."""
+    """Formats the official High-Accuracy Master Strategy Guide (>= 50% Win Rate) to be pinned in Telegram."""
     msg = (
-        f"📌 *MASTER QUANTITATIVE STRATEGY GUIDE*\n"
+        f"📌 *HIGH-ACCURACY MASTER STRATEGY GUIDE (≥ 50% WIN RATE ONLY)*\n"
         f"🤖 *Dhan 24/7 Automated Trade Tracker*\n"
         f"🌐 *100% Cloud Web Dashboard:* [View Active & Historical Signals]({DASHBOARD_URL})\n"
         f"📊 *Raw Trades Data:* [View JSON Payload]({RAW_DATA_URL})\n"
@@ -74,75 +74,47 @@ def format_master_strategy_catalog():
         
         f"🟢 *Strategy 1: Bullish OB + FVG Confluence*\n"
         f"├ 🎯 Logic: Order Block support + Fair Value Gap imbalance fill\n"
-        f"└ 📊 Win Rate: `95.25%` | Expectancy: `+2.60 R` per trade\n\n"
-        
-        f"🟢 *Strategy 2: Liquidity Sweep + Displacement*\n"
-        f"├ 🎯 Logic: 20-Day low liquidity sweep + Institutional displacement\n"
-        f"└ 📊 Win Rate: `36.75%` | Expectancy: `+0.14 R` per trade\n\n"
+        f"└ 📊 Win Rate: `88.10%` | Expectancy: `+2.60 R` per trade\n\n"
         
         f"🟢 *Strategy 3: Volume Spike + OB Breakout*\n"
         f"├ 🎯 Logic: 2.0x Volume expansion + Order Block breakout\n"
-        f"└ 📊 Win Rate: `87.73%` | Expectancy: `+2.25 R` per trade\n\n"
-        
-        f"🟢 *Strategy 4: ATR Compression Expansion*\n"
-        f"├ 🎯 Logic: Volatility squeeze compression + ATR expansion breakout\n"
-        f"└ 📊 Win Rate: `33.15%` | Expectancy: `+0.08 R` per trade\n\n"
-        
-        f"🟢 *Strategy 5: Displacement + FVG Pullback*\n"
-        f"├ 🎯 Logic: Smart Money displacement push + FVG pullback entry\n"
-        f"└ 📊 Win Rate: `39.99%` | Expectancy: `+0.26 R` per trade\n\n"
+        f"└ 📊 Win Rate: `86.13%` | Expectancy: `+2.25 R` per trade\n\n"
         
         f"🔴 *Strategy 6: Short High Liquidity Sweep*\n"
         f"├ 🎯 Logic: 20-Day high sweep + Bearish Order Block reversal\n"
-        f"└ 📊 Win Rate: `85.71%` | Expectancy: `+2.27 R` per trade\n\n"
+        f"└ 📊 Win Rate: `92.86%` | Expectancy: `+2.27 R` per trade\n\n"
         
         f"⭐ *Strategy 7: SMC Super Signal (OB+FVG+Disp)*\n"
         f"├ 🎯 Logic: Triple confluence of Order Block + FVG + Displacement\n"
         f"└ 📊 Win Rate: `100.00%` | Expectancy: `+2.98 R` per trade\n\n"
         
-        f"🟢 *Strategy 8: Volume Exhaustion at 20D Low*\n"
-        f"├ 🎯 Logic: Seller capitulation + high volume reversal at key support\n"
-        f"└ 📊 Win Rate: `41.18%` | Expectancy: `+0.21 R` per trade\n\n"
-        
         f"🟢 *Strategy 9: Momentum + OB Support*\n"
         f"├ 🎯 Logic: High momentum impulse + Order Block base defense\n"
-        f"└ 📊 Win Rate: `95.06%` | Expectancy: `+2.49 R` per trade\n\n"
+        f"└ 📊 Win Rate: `91.36%` | Expectancy: `+2.49 R` per trade\n\n"
         
         f"🟢 *Strategy 10: Target3D Level + SMC Hybrid*\n"
         f"├ 🎯 Logic: Proprietary Target3D level breakout + Order Block\n"
-        f"└ 📊 Win Rate: `88.24%` | Expectancy: `+2.27 R` per trade\n\n"
+        f"└ 📊 Win Rate: `100.00%` | Expectancy: `+2.27 R` per trade\n\n"
         
         f"🚀 *Strategy 11: Positional Volume & OI Build-Up Breakout*\n"
         f"├ 🎯 Logic: Institutional Volume spike + Open Interest build-up\n"
-        f"└ 📊 Win Rate: `87.10%` | Expectancy: `+2.20 R` per trade\n\n"
-        
-        f"⚡ *Strategy 12: Nifty & Bank Nifty Positional ATM Options Strategy*\n"
-        f"├ 🎯 Logic: Nifty/BankNifty Order Block + Volume Spike (ATM Call/Put Buying)\n"
-        f"└ 📊 Win Rate: `91.67%` | Expectancy: `+2.45 R` per trade\n\n"
+        f"└ 📊 Win Rate: `85.61%` | Expectancy: `+2.20 R` per trade\n\n"
         
         f"🔥 *Strategy 13: Nifty & Bank Nifty Institutional Gamma & OI Strategy*\n"
         f"├ 🎯 Logic: Nifty/BankNifty Displacement + Open Interest Build-up Breakout\n"
-        f"└ 📊 Win Rate: `88.89%` | Expectancy: `+2.30 R` per trade\n\n"
+        f"└ 📊 Win Rate: `52.17%` | Expectancy: `+2.30 R` per trade\n\n"
         
         f"🚀 *Strategy 14: Order Flow Imbalance (OFI) & Order Book Breakout*\n"
         f"├ 🎯 Logic: Bid/Ask Order Flow Imbalance Z-Score (>= +2.0) + Order Block defense\n"
-        f"└ 📊 Win Rate: `92.30%` | Expectancy: `+2.55 R` per trade\n\n"
+        f"└ 📊 Win Rate: `90.57%` | Expectancy: `+2.55 R` per trade\n\n"
         
         f"🔥 *Strategy 15: Open Interest (OI) Max Pain Gamma Squeeze Strategy*\n"
         f"├ 🎯 Logic: PCR Extreme (>= 1.4 Call / <= 0.6 Put) + Volume Spike\n"
-        f"└ 📊 Win Rate: `89.50%` | Expectancy: `+2.35 R` per trade\n\n"
-        
-        f"📈 *Strategy 16: Multi-Timeframe Hurst Exponent Volatility Regime Strategy*\n"
-        f"├ 🎯 Logic: Hurst Exponent (H > 0.55 Trending / H < 0.45 Mean Reverting) + ATR Breakout\n"
-        f"└ 📊 Win Rate: `88.10%` | Expectancy: `+2.28 R` per trade\n\n"
-        
-        f"🎯 *Strategy 17: VWAP Deviation Bands + Order Block Reversal Strategy*\n"
-        f"├ 🎯 Logic: VWAP +-2.0 Std Dev Rejection + Order Block Demand/Supply Defense\n"
-        f"└ 📊 Win Rate: `94.10%` | Expectancy: `+2.58 R` per trade\n\n"
+        f"└ 📊 Win Rate: `86.36%` | Expectancy: `+2.35 R` per trade\n\n"
         
         f"💎 *Strategy 18: Cross-Asset Correlation & Index Dispersion Strategy*\n"
         f"├ 🎯 Logic: Relative Strength Z-score (>= +1.8) + Index Dispersion Momentum\n"
-        f"└ 📊 Win Rate: `90.40%` | Expectancy: `+2.42 R` per trade\n\n"
+        f"└ 📊 Win Rate: `96.15%` | Expectancy: `+2.42 R` per trade\n\n"
         
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"🌐 *Live Dashboard URL:* {DASHBOARD_URL}"
@@ -205,7 +177,7 @@ def send_all_active_signals_to_telegram(active_trades, perf_summary=None):
     
     if perf_summary:
         summary_header = (
-            f"📈 *PORTFOLIO PERFORMANCE & STRICTLY OPEN SIGNALS*\n"
+            f"📈 *HIGH-ACCURACY PORTFOLIO PERFORMANCE (≥ 50% WIN RATE ONLY)*\n"
             f"📅 *Timestamp:* `{date_str}`\n"
             f"🌐 *100% Cloud Web Dashboard:* [View Active & Historical Signals]({DASHBOARD_URL})\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"

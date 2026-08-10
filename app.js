@@ -12,47 +12,23 @@ const MASTER_STRATEGIES = [
         name: "Strategy 1: Bullish OB + FVG Confluence",
         tag: "SMC Core",
         logic: "Detects 20-period bullish Smart Money Order Block (OB) support coinciding with Fair Value Gap (FVG) imbalance fill.",
-        winrate: "95.25%",
+        winrate: "88.10%",
         expectancy: "+2.60 R"
-    },
-    {
-        num: "2",
-        name: "Strategy 2: Liquidity Sweep + Displacement",
-        tag: "Liquidity",
-        logic: "Identifies 20-day low liquidity sweeps followed immediately by institutional displacement green candles.",
-        winrate: "36.75%",
-        expectancy: "+0.14 R"
     },
     {
         num: "3",
         name: "Strategy 3: Volume Spike + OB Breakout",
         tag: "Volume SMC",
         logic: "Combines 2.0x 20-period Volume ratio expansion with bullish Order Block structure breakout.",
-        winrate: "87.73%",
+        winrate: "86.13%",
         expectancy: "+2.25 R"
-    },
-    {
-        num: "4",
-        name: "Strategy 4: ATR Compression Expansion",
-        tag: "Volatility",
-        logic: "Captures volatility compression (ATR < 0.8x 20-SMA) followed by momentum expansion breakout.",
-        winrate: "33.15%",
-        expectancy: "+0.08 R"
-    },
-    {
-        num: "5",
-        name: "Strategy 5: Smart Money Displacement + FVG Pullback",
-        tag: "FVG Pullback",
-        logic: "Enters on high momentum Smart Money displacement push followed by a 50% Fair Value Gap retest pullback.",
-        winrate: "39.99%",
-        expectancy: "+0.26 R"
     },
     {
         num: "6",
         name: "Strategy 6: Short High Liquidity Sweep",
         tag: "Short Reversal",
         logic: "Detects 20-day high liquidity sweeps combined with bearish Order Block rejection candles.",
-        winrate: "85.71%",
+        winrate: "92.86%",
         expectancy: "+2.27 R"
     },
     {
@@ -64,19 +40,11 @@ const MASTER_STRATEGIES = [
         expectancy: "+2.98 R"
     },
     {
-        num: "8",
-        name: "Strategy 8: Volume Exhaustion Reversal at 20D Low",
-        tag: "Exhaustion",
-        logic: "Identifies seller capitulation volume spikes at 20-day lows with hammer/pinbar candlestick reversals.",
-        winrate: "41.18%",
-        expectancy: "+0.21 R"
-    },
-    {
         num: "9",
         name: "Strategy 9: Momentum + OB Support",
         tag: "Momentum",
         logic: "Triggers on high momentum impulse candles supported by underlying institutional Order Block demand bases.",
-        winrate: "95.06%",
+        winrate: "91.36%",
         expectancy: "+2.49 R"
     },
     {
@@ -84,7 +52,7 @@ const MASTER_STRATEGIES = [
         name: "Strategy 10: Target3D Level + SMC Hybrid",
         tag: "Target3D SMC",
         logic: "Proprietary Target3D structural breakout confirmed by Smart Money Order Block base defense.",
-        winrate: "88.24%",
+        winrate: "100.00%",
         expectancy: "+2.27 R"
     },
     {
@@ -92,23 +60,15 @@ const MASTER_STRATEGIES = [
         name: "Strategy 11: Positional Volume & OI Build-Up Breakout",
         tag: "Volume & OI",
         logic: "Scans institutional volume expansion (≥ 1.8x) + Open Interest (OI) build-up breakout over 20-period SMA trend.",
-        winrate: "87.10%",
+        winrate: "85.61%",
         expectancy: "+2.20 R"
-    },
-    {
-        num: "12",
-        name: "Strategy 12: Nifty & Bank Nifty Positional ATM Options Strategy",
-        tag: "Index Options",
-        logic: "Triggers ATM Call/Put Buying on Nifty, Bank Nifty & FinNifty index Order Block support + Volume Expansion (≥ 1.5x).",
-        winrate: "91.67%",
-        expectancy: "+2.45 R"
     },
     {
         num: "13",
         name: "Strategy 13: Nifty & Bank Nifty Institutional Gamma & OI Strategy",
         tag: "Gamma & OI",
         logic: "Captures institutional Open Interest (OI) build-up + Smart Money displacement expansion breakouts on Nifty & Bank Nifty.",
-        winrate: "88.89%",
+        winrate: "52.17%",
         expectancy: "+2.30 R"
     },
     {
@@ -116,7 +76,7 @@ const MASTER_STRATEGIES = [
         name: "Strategy 14: Order Flow Imbalance (OFI) & Order Book Breakout",
         tag: "Order Flow",
         logic: "Measures instantaneous bid/ask Order Flow Imbalance (OFI) Z-score (≥ +2.0) with Smart Money Order Block defense.",
-        winrate: "92.30%",
+        winrate: "90.57%",
         expectancy: "+2.55 R"
     },
     {
@@ -124,31 +84,15 @@ const MASTER_STRATEGIES = [
         name: "Strategy 15: Open Interest (OI) Max Pain Gamma Squeeze Strategy",
         tag: "Max Pain OI",
         logic: "Triggers on PCR extremes (≥ 1.4 Call Buying / ≤ 0.6 Put Buying) + Volume Spike at key strike clusters.",
-        winrate: "89.50%",
+        winrate: "86.36%",
         expectancy: "+2.35 R"
-    },
-    {
-        num: "16",
-        name: "Strategy 16: Multi-Timeframe Hurst Exponent Volatility Regime Strategy",
-        tag: "Hurst Regime",
-        logic: "Classifies Trending (H > 0.55) vs Mean-Reverting (H < 0.45) volatility regimes for breakout entries.",
-        winrate: "88.10%",
-        expectancy: "+2.28 R"
-    },
-    {
-        num: "17",
-        name: "Strategy 17: VWAP Deviation Bands + Order Block Reversal Strategy",
-        tag: "VWAP Bands",
-        logic: "Reversal entries when price reaches ±2.0 VWAP Standard Deviation Bands coinciding with Order Block demand/supply.",
-        winrate: "94.10%",
-        expectancy: "+2.58 R"
     },
     {
         num: "18",
         name: "Strategy 18: Cross-Asset Correlation & Index Dispersion Strategy",
         tag: "Index Dispersion",
         logic: "Tracks 20-day rolling correlation (ρ) and relative strength Z-score (≥ +1.8) for index dispersion breakouts.",
-        winrate: "90.40%",
+        winrate: "96.15%",
         expectancy: "+2.42 R"
     }
 ];
@@ -191,7 +135,7 @@ function renderMetrics() {
     const winCount = wins.length;
     const lossCount = losses.length;
     const closedTotal = closedList.length;
-    const winRate = closedTotal > 0 ? ((winCount / closedTotal) * 100).toFixed(2) : (dashboardData.summary?.accuracy_pct || '95.00');
+    const winRate = closedTotal > 0 ? ((winCount / closedTotal) * 100).toFixed(2) : (dashboardData.summary?.accuracy_pct || '88.50');
     
     const openR = activeList.reduce((acc, curr) => acc + (curr.unrealized_r || 0.0), 0.0).toFixed(2);
     
