@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhan Elite Trade Tracker | Live & Historical Signals Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-group">
+                <h1>⚡ DHAN ELITE TRADE TRACKER</h1>
+                <p>Automated 24/7 Quantitative Strategy Dashboard & Signal Engine</p>
+            </div>
+            <div class="status-badge-live">
+                <div class="pulse-dot"></div>
+                <span id="last-update">LIVE STREAMING & AGENT MONITORED</span>
+            </div>
+        </header>
+
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="title">Strategy Win Rate</div>
+                <div class="value" id="stat-winrate" style="color: var(--accent-green)">--%</div>
+            </div>
+            <div class="metric-card">
+                <div class="title">Strictly Open Positions</div>
+                <div class="value" id="stat-active-count">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="title">Target Hits (+3R)</div>
+                <div class="value" id="stat-wins-count" style="color: var(--accent-green)">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="title">Stop Hits (-1R)</div>
+                <div class="value" id="stat-losses-count" style="color: var(--accent-red)">--</div>
+            </div>
+            <div class="metric-card">
+                <div class="title">Current Open Profit</div>
+                <div class="value" id="stat-open-r" style="color: var(--accent-blue)">-- R</div>
+            </div>
+            <div class="metric-card">
+                <div class="title">Avg Days to Target</div>
+                <div class="value" id="stat-avg-days" style="color: var(--accent-gold)">-- Days</div>
+            </div>
+        </section>
+
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-active-btn" onclick="showTab('active')">⚡ Active Trades (<span id="count-active-tab">0</span>)</button>
+            <button class="tab-btn" id="tab-history-btn" onclick="showTab('history')">📜 Historical Closed Signals (<span id="count-history-tab">0</span>)</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="trades-table">
+                <thead>
+                    <tr id="table-header">
+                        <th>Symbol</th>
+                        <th>Strategy Name</th>
+                        <th>Direction</th>
+                        <th>Activated Date</th>
+                        <th>Entry Price</th>
+                        <th>Today Open Price</th>
+                        <th>Est. Profit (%)</th>
+                        <th>Yield (R)</th>
+                        <th>Stop Loss (-1R)</th>
+                        <th>Take Profit (+3R)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <tr><td colspan="11" style="text-align:center; padding: 3rem;">Loading live signals dataset...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

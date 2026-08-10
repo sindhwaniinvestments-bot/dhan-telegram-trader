@@ -15,8 +15,8 @@ RISK_PER_TRADE_PCT = 0.01     # 1% risk per trade ($1,000 risk = -1R)
 DATA_DIR = r"D:\dhan automation\data"
 TRADES_JSON_PATH = r"d:\Monkeycode\github\active_trades.json"
 HISTORY_CSV_PATH = r"d:\Monkeycode\github\trade_history.csv"
+DASHBOARD_JSON_PATH = r"d:\Monkeycode\github\dashboard_data.json"
 
-# Complete Suite of ALL 11 Quantitative Strategies
 ALL_11_STRATEGIES = {
     'strat_1_ob_fvg_confluence': {
         'name': 'Strategy 1: Bullish OB + FVG Confluence',
@@ -111,6 +111,33 @@ class EliteTradeTrackerAgent:
         with open(TRADES_JSON_PATH, 'w') as f:
             json.dump(active_only, f, indent=4)
         self.active_trades = active_only
+        self.export_dashboard_json()
+
+    def export_dashboard_json(self):
+        """Exports dashboard_data.json for web dashboard rendering active & historical trades."""
+        closed_trades = []
+        if os.path.exists(HISTORY_CSV_PATH):
+            try:
+                df_hist = pd.read_csv(HISTORY_CSV_PATH)
+                closed_trades = df_hist.to_dict('records')
+            except Exception:
+                pass
+
+        summary = self.get_portfolio_performance_summary()
+        active_list = list(self.active_trades.values())
+        
+        dashboard_payload = {
+            'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'summary': summary,
+            'active_trades': active_list,
+            'closed_trades': closed_trades
+        }
+        
+        try:
+            with open(DASHBOARD_JSON_PATH, 'w') as f:
+                json.dump(dashboard_payload, f, indent=4)
+        except Exception:
+            pass
 
     def fetch_latest_closing_prices(self):
         """Extracts the latest Daily Closing Price (close) for all symbols from smc_signals.csv."""
@@ -356,3 +383,4 @@ class EliteTradeTrackerAgent:
             df_closed.to_csv(HISTORY_CSV_PATH, mode='a', header=False, index=False)
         else:
             df_closed.to_csv(HISTORY_CSV_PATH, index=False)
+        self.export_dashboard_json()
