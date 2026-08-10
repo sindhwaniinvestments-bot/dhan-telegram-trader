@@ -52,9 +52,11 @@
         <div class="tabs">
             <button class="tab-btn active" id="tab-active-btn" onclick="showTab('active')">⚡ Active Trades (<span id="count-active-tab">0</span>)</button>
             <button class="tab-btn" id="tab-history-btn" onclick="showTab('history')">📜 Historical Closed Signals (<span id="count-history-tab">0</span>)</button>
+            <button class="tab-btn" id="tab-guide-btn" onclick="showTab('guide')">📘 Master Strategy Guide</button>
         </div>
 
-        <div class="table-wrapper">
+        <!-- Trades Table View -->
+        <div class="table-wrapper" id="trades-table-wrapper">
             <table id="trades-table">
                 <thead>
                     <tr id="table-header">
@@ -75,6 +77,22 @@
                     <tr><td colspan="11" style="text-align:center; padding: 3rem;">Loading live signals dataset...</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Strategy Guide View -->
+        <div class="guide-wrapper" id="strategy-guide-wrapper" style="display: none;">
+            <div class="guide-header">
+                <h2>📘 MASTER QUANTITATIVE STRATEGY CATALOG</h2>
+                <p>Institutional Trading Rules, Confluence Conditions & Backtested Performance Metrics</p>
+                <div class="risk-model-bar">
+                    <span>⚡ <strong>Risk-to-Reward:</strong> 3 : 1 (+3R Target / -1R Stop Loss)</span>
+                    <span>⚖️ <strong>Position Sizing:</strong> 1% Risk per Trade ($1,000 Risk = 1R)</span>
+                    <span>📊 <strong>Evaluation Basis:</strong> Daily Closing Prices</span>
+                </div>
+            </div>
+            <div class="strategy-grid" id="strategy-grid">
+                <!-- Dynamically populated by app.js -->
+            </div>
         </div>
     </div>
 
