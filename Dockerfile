@@ -1,17 +1,22 @@
-# Dockerfile for 24/7 Cloud Deployment of Telegram Trade Tracker Agent
 FROM python:3.10-slim
 
 WORKDIR /app
 
-# Copy requirements & install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy application files
+# Copy requirements and install
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir flask gunicorn
+
+# Copy project files
 COPY . .
 
-# Environment variables
-ENV PYTHONUNBUFFERED=1
+# Expose server port
+EXPOSE 8080
 
-# Run the 24/7 background trade tracker daemon
-CMD ["python", "run_daemon.py"]
+# Launch server
+CMD ["python", "server.py"]
