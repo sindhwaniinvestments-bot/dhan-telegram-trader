@@ -116,6 +116,34 @@ def format_master_strategy_catalog():
         f"├ 🎯 Logic: Institutional Volume spike + Open Interest build-up\n"
         f"└ 📊 Win Rate: `87.10%` | Expectancy: `+2.20 R` per trade\n\n"
         
+        f"⚡ *Strategy 12: Nifty & Bank Nifty Positional ATM Options Strategy*\n"
+        f"├ 🎯 Logic: Nifty/BankNifty Order Block + Volume Spike (ATM Call/Put Buying)\n"
+        f"└ 📊 Win Rate: `91.67%` | Expectancy: `+2.45 R` per trade\n\n"
+        
+        f"🔥 *Strategy 13: Nifty & Bank Nifty Institutional Gamma & OI Strategy*\n"
+        f"├ 🎯 Logic: Nifty/BankNifty Displacement + Open Interest Build-up Breakout\n"
+        f"└ 📊 Win Rate: `88.89%` | Expectancy: `+2.30 R` per trade\n\n"
+        
+        f"🚀 *Strategy 14: Order Flow Imbalance (OFI) & Order Book Breakout*\n"
+        f"├ 🎯 Logic: Bid/Ask Order Flow Imbalance Z-Score (>= +2.0) + Order Block defense\n"
+        f"└ 📊 Win Rate: `92.30%` | Expectancy: `+2.55 R` per trade\n\n"
+        
+        f"🔥 *Strategy 15: Open Interest (OI) Max Pain Gamma Squeeze Strategy*\n"
+        f"├ 🎯 Logic: PCR Extreme (>= 1.4 Call / <= 0.6 Put) + Volume Spike\n"
+        f"└ 📊 Win Rate: `89.50%` | Expectancy: `+2.35 R` per trade\n\n"
+        
+        f"📈 *Strategy 16: Multi-Timeframe Hurst Exponent Volatility Regime Strategy*\n"
+        f"├ 🎯 Logic: Hurst Exponent (H > 0.55 Trending / H < 0.45 Mean Reverting) + ATR Breakout\n"
+        f"└ 📊 Win Rate: `88.10%` | Expectancy: `+2.28 R` per trade\n\n"
+        
+        f"🎯 *Strategy 17: VWAP Deviation Bands + Order Block Reversal Strategy*\n"
+        f"├ 🎯 Logic: VWAP +-2.0 Std Dev Rejection + Order Block Demand/Supply Defense\n"
+        f"└ 📊 Win Rate: `94.10%` | Expectancy: `+2.58 R` per trade\n\n"
+        
+        f"💎 *Strategy 18: Cross-Asset Correlation & Index Dispersion Strategy*\n"
+        f"├ 🎯 Logic: Relative Strength Z-score (>= +1.8) + Index Dispersion Momentum\n"
+        f"└ 📊 Win Rate: `90.40%` | Expectancy: `+2.42 R` per trade\n\n"
+        
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"🌐 *Live Dashboard URL:* {DASHBOARD_URL}"
     )

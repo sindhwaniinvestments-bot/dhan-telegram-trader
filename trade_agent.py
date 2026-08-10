@@ -16,23 +16,31 @@ ACTIVE_TRADES_JSON_PATH = r"d:\Monkeycode\github\active_trades.json"
 HISTORY_CSV_PATH = r"d:\Monkeycode\github\trade_history.csv"
 DASHBOARD_JSON_PATH = r"d:\Monkeycode\github\dashboard_data.json"
 
-ALL_11_STRATEGIES = {
-    'strat_1_bullish_ob_fvg': {'name': 'Strategy 1: Bullish OB + FVG Confluence', 'direction': 'LONG'},
-    'strat_2_liquidity_sweep_displacement': {'name': 'Strategy 2: Liquidity Sweep + Displacement Reversal', 'direction': 'LONG'},
-    'strat_3_volume_spike_ob': {'name': 'Strategy 3: Volume Spike + Order Block Breakout', 'direction': 'LONG'},
-    'strat_4_atr_compression_expansion': {'name': 'Strategy 4: ATR Compression Expansion', 'direction': 'LONG'},
-    'strat_5_displacement_fvg': {'name': 'Strategy 5: Smart Money Displacement + FVG Pullback', 'direction': 'LONG'},
+ALL_18_STRATEGIES = {
+    'strat_1_ob_fvg_confluence': {'name': 'Strategy 1: Bullish OB + FVG Confluence', 'direction': 'LONG'},
+    'strat_2_sweep_displacement': {'name': 'Strategy 2: Liquidity Sweep + Displacement Reversal', 'direction': 'LONG'},
+    'strat_3_vol_ob_breakout': {'name': 'Strategy 3: Volume Spike + Order Block Breakout', 'direction': 'LONG'},
+    'strat_4_atr_compression_break': {'name': 'Strategy 4: ATR Compression Expansion', 'direction': 'LONG'},
+    'strat_5_disp_fvg_entry': {'name': 'Strategy 5: Smart Money Displacement + FVG Pullback', 'direction': 'LONG'},
     'strat_6_short_liquidity_sweep': {'name': 'Strategy 6: Short High Liquidity Sweep', 'direction': 'SHORT'},
     'strat_7_smc_super_signal': {'name': 'Strategy 7: SMC Super Signal (OB+FVG+Disp)', 'direction': 'LONG'},
-    'strat_8_vol_exhaustion_20d_low': {'name': 'Strategy 8: Volume Exhaustion Reversal at 20D Low', 'direction': 'LONG'},
+    'strat_8_vol_exhaustion_low': {'name': 'Strategy 8: Volume Exhaustion Reversal at 20D Low', 'direction': 'LONG'},
     'strat_9_momentum_ob_support': {'name': 'Strategy 9: Momentum + OB Support', 'direction': 'LONG'},
     'strat_10_target3d_smc_hybrid': {'name': 'Strategy 10: Target3D Level + SMC Hybrid', 'direction': 'LONG'},
-    'strat_11_positional_vol_oi': {'name': 'Strategy 11: Positional Volume & OI Build-Up Breakout', 'direction': 'LONG'}
+    'strat_11_positional_vol_oi': {'name': 'Strategy 11: Positional Volume & OI Build-Up Breakout', 'direction': 'LONG'},
+    'strat_12_nifty_banknifty_options': {'name': 'Strategy 12: Nifty & Bank Nifty Positional ATM Options Strategy', 'direction': 'LONG'},
+    'strat_13_index_gamma_oi_breakout': {'name': 'Strategy 13: Nifty & Bank Nifty Institutional Gamma & OI Strategy', 'direction': 'LONG'},
+    'strat_14_ofi_breakout': {'name': 'Strategy 14: Order Flow Imbalance (OFI) & Order Book Breakout', 'direction': 'LONG'},
+    'strat_15_oi_gamma_squeeze': {'name': 'Strategy 15: Open Interest (OI) Max Pain Gamma Squeeze Strategy', 'direction': 'LONG'},
+    'strat_16_hurst_vol_regime': {'name': 'Strategy 16: Multi-Timeframe Hurst Exponent Volatility Regime Strategy', 'direction': 'LONG'},
+    'strat_17_vwap_ob_reversal': {'name': 'Strategy 17: VWAP Deviation Bands + Order Block Reversal Strategy', 'direction': 'LONG'},
+    'strat_18_index_dispersion': {'name': 'Strategy 18: Cross-Asset Correlation & Index Dispersion Momentum Strategy', 'direction': 'LONG'}
 }
+ALL_11_STRATEGIES = ALL_18_STRATEGIES
 
 class EliteTradeTrackerAgent:
     """
-    Elite Agent that tracks 100% of signals across ALL 11 strategies.
+    Elite Agent that tracks 100% of signals across ALL 18 strategies.
     Strictly evaluates Target (+3R) & Stop Loss (-1R) based on Daily Closing Prices.
     Logs exact Days to Target (holding_days) and moves hit trades to Historical Signals.
     """
@@ -69,7 +77,7 @@ class EliteTradeTrackerAgent:
 
     def scan_market_and_track(self, scan_window_bars=100):
         """
-        Scans all 11 strategies. Evaluates every signal against forward daily closing prices.
+        Scans all 18 strategies. Evaluates every signal against forward daily closing prices.
         If Target (+3R) or Stop Loss (-1R) is hit on closing price, archives to History.
         If and ONLY IF the trade is still open, places it in Active Trades.
         """
@@ -105,7 +113,7 @@ class EliteTradeTrackerAgent:
                 if pd.isna(atr) or atr <= 0 or close_price <= 0:
                     continue
                     
-                for strat_key, strat_info in ALL_11_STRATEGIES.items():
+                for strat_key, strat_info in ALL_18_STRATEGIES.items():
                     if row.get(strat_key) == True:
                         trade_id = f"{symbol}_{strat_key}_{bar_date}"
                         
