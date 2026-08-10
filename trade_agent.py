@@ -16,18 +16,37 @@ DATA_DIR = r"D:\dhan automation\data"
 TRADES_JSON_PATH = r"d:\Monkeycode\github\active_trades.json"
 HISTORY_CSV_PATH = r"d:\Monkeycode\github\trade_history.csv"
 
-ELITE_STRATEGIES = {
+# Complete Suite of ALL 11 Quantitative Strategies
+ALL_11_STRATEGIES = {
     'strat_1_ob_fvg_confluence': {
         'name': 'Strategy 1: Bullish OB + FVG Confluence',
         'direction': 'LONG',
         'win_rate': 95.25,
         'ev_r': 2.60
     },
+    'strat_2_sweep_displacement': {
+        'name': 'Strategy 2: Liquidity Sweep + Displacement Reversal',
+        'direction': 'LONG',
+        'win_rate': 36.75,
+        'ev_r': 0.14
+    },
     'strat_3_vol_ob_breakout': {
         'name': 'Strategy 3: Volume Spike + Order Block Breakout',
         'direction': 'LONG',
         'win_rate': 87.73,
         'ev_r': 2.25
+    },
+    'strat_4_atr_compression_break': {
+        'name': 'Strategy 4: ATR Compression Expansion',
+        'direction': 'LONG',
+        'win_rate': 33.15,
+        'ev_r': 0.08
+    },
+    'strat_5_disp_fvg_entry': {
+        'name': 'Strategy 5: Smart Money Displacement + FVG Pullback',
+        'direction': 'LONG',
+        'win_rate': 39.99,
+        'ev_r': 0.26
     },
     'strat_6_short_liquidity_sweep': {
         'name': 'Strategy 6: Short High Liquidity Sweep',
@@ -40,6 +59,12 @@ ELITE_STRATEGIES = {
         'direction': 'LONG',
         'win_rate': 100.00,
         'ev_r': 2.98
+    },
+    'strat_8_vol_exhaustion_low': {
+        'name': 'Strategy 8: Volume Exhaustion Reversal at 20D Low',
+        'direction': 'LONG',
+        'win_rate': 41.18,
+        'ev_r': 0.21
     },
     'strat_9_momentum_ob_support': {
         'name': 'Strategy 9: Momentum + OB Support',
@@ -60,6 +85,8 @@ ELITE_STRATEGIES = {
         'ev_r': 2.20
     }
 }
+
+ELITE_STRATEGIES = ALL_11_STRATEGIES
 
 class EliteTradeTrackerAgent:
     def __init__(self, capital=PORTFOLIO_CAPITAL, risk_pct=RISK_PER_TRADE_PCT, enable_telegram=True):
@@ -159,7 +186,7 @@ class EliteTradeTrackerAgent:
         }
 
     def scan_market_and_track(self, scan_window_bars=100):
-        """Scans market data feed, detects Strategy setups, and tracks active positions."""
+        """Scans market data feed across ALL 11 strategies, detects setups, and tracks active positions."""
         raw_df = load_smc_signals()
         df = compute_smc_features(raw_df)
         df = calculate_3to1_rr_levels(df)
@@ -189,7 +216,7 @@ class EliteTradeTrackerAgent:
             if pd.isna(atr) or atr <= 0 or close_price <= 0:
                 continue
                 
-            for strat_key, strat_info in ELITE_STRATEGIES.items():
+            for strat_key, strat_info in ALL_11_STRATEGIES.items():
                 if row.get(strat_key) == True:
                     trade_id = f"{symbol}_{strat_key}_{bar_date}"
                     
@@ -232,10 +259,7 @@ class EliteTradeTrackerAgent:
         return self.active_trades
 
     def evaluate_open_positions(self, live_prices=None):
-        """
-        Evaluates active trades against Daily Closing Prices across forward bars.
-        If a trade hits SL or Target based on Closing Price, it is REMOVED from active_trades and recorded in history.
-        """
+        """Evaluates active trades against Daily Closing Prices across forward bars."""
         raw_df = load_smc_signals()
         if live_prices is None:
             live_prices = self.fetch_latest_closing_prices()
@@ -251,7 +275,6 @@ class EliteTradeTrackerAgent:
             pos_size = trade.get('position_size', 1)
             entry_date_str = trade.get('entry_date', '')
             
-            # Fetch forward bars for this symbol after entry_date
             sym_df = raw_df[(raw_df['symbol'] == symbol) & (raw_df['day'] > entry_date_str)].sort_values('day')
             
             status = 'ACTIVE'
@@ -259,7 +282,6 @@ class EliteTradeTrackerAgent:
             exit_date = entry_date_str
             holding_days = 0
             
-            # Scan forward bars to check closing prices
             for _, f_row in sym_df.iterrows():
                 holding_days += 1
                 f_close = float(f_row['close'])
@@ -288,7 +310,6 @@ class EliteTradeTrackerAgent:
                         exit_date = f_day
                         break
                         
-            # If trade has not hit SL or TP, evaluate current status based on latest closing price
             curr_price = live_prices.get(symbol, trade['current_price'])
             trade['current_price'] = curr_price
             atr_dist = abs(entry - sl)
@@ -307,7 +328,6 @@ class EliteTradeTrackerAgent:
             trade['est_profit_amt'] = round(pnl_amt, 2)
             trade['perf_status'] = f"ACTIVE ({pnl_pct:+.2f}% | {unrealized_r:+.2f}R)"
             
-            # IF SL OR TARGET HIT BASED ON DAILY CLOSING PRICE -> REMOVE FROM ACTIVE TRADES
             if status != 'ACTIVE':
                 trade['status'] = status
                 trade['exit_price'] = exit_price
@@ -316,9 +336,8 @@ class EliteTradeTrackerAgent:
                 trade['unrealized_r'] = 3.0 if 'TARGET_HIT' in status else -1.0
                 
                 closed_trades.append(trade)
-                # REMOVE FROM ACTIVE TRADES IMMEDIATELY
                 del self.active_trades[trade_id]
-                print(f"🎯 TRADE CLOSED & REMOVED (Closing Price): [{symbol}] | Status: {status} | Took: {trade['holding_days']} days")
+                print(f"🎯 TRADE CLOSED & REMOVED: [{symbol}] | Status: {status} | Took: {trade['holding_days']} days")
                 
                 if self.enable_telegram:
                     msg = format_trade_exit_alert(trade)
