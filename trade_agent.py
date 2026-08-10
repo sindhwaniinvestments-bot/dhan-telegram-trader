@@ -93,13 +93,13 @@ class EliteTradeTrackerAgent:
                     latest = df_ticks.groupby('symbol').last().reset_index()
                     for _, r in latest.iterrows():
                         latest_prices[r['symbol']] = float(r['close'])
-            except Exception as e:
+            except Exception:
                 pass
 
         return latest_prices
 
     def scan_market_and_track(self, scan_window_bars=100):
-        """Scans live & historical data feed, detects Strategy setups, and dispatches Telegram notifications."""
+        """Scans live & historical data feed, detects Strategy setups, and tracks positions."""
         raw_df = load_smc_signals()
         df = compute_smc_features(raw_df)
         df = calculate_3to1_rr_levels(df)
@@ -141,8 +141,11 @@ class EliteTradeTrackerAgent:
                             'risk_amount': self.risk_amount,
                             'position_size': position_size,
                             'status': 'ACTIVE',
+                            'perf_status': 'ACTIVE',
                             'current_price': close_price,
-                            'unrealized_r': 0.0
+                            'unrealized_r': 0.0,
+                            'est_profit_pct': 0.0,
+                            'est_profit_amt': 0.0
                         }
                         
                         self.active_trades[trade_id] = new_trade
@@ -157,7 +160,7 @@ class EliteTradeTrackerAgent:
         return self.active_trades
 
     def evaluate_open_positions(self, live_prices=None):
-        """Evaluates active trades against live market prices and dispatches Telegram exit alerts."""
+        """Evaluates active trades against live prices, calculating Estimated Profit % & R-Yield."""
         if live_prices is None:
             live_prices = self.fetch_live_prices()
             
@@ -169,31 +172,49 @@ class EliteTradeTrackerAgent:
             sl = trade['sl_price']
             tp = trade['tp_price']
             entry = trade['entry_price']
+            pos_size = trade.get('position_size', 1)
             
             curr_price = live_prices.get(symbol, trade['current_price'])
             trade['current_price'] = curr_price
             
             atr_dist = abs(entry - sl)
+            
+            # Calculate Profit % and $
             if direction == 'LONG':
-                unrealized_pnl = curr_price - entry
-            else:
-                unrealized_pnl = entry - curr_price
+                pnl_per_share = curr_price - entry
+                pnl_pct = (pnl_per_share / entry) * 100
+            else: # SHORT
+                pnl_per_share = entry - curr_price
+                pnl_pct = (pnl_per_share / entry) * 100
+                
+            pnl_amt = pnl_per_share * pos_size
+            unrealized_r = round(pnl_per_share / atr_dist, 2) if atr_dist > 0 else 0.0
             
-            unrealized_r = round(unrealized_pnl / atr_dist, 2) if atr_dist > 0 else 0.0
             trade['unrealized_r'] = unrealized_r
+            trade['est_profit_pct'] = round(pnl_pct, 2)
+            trade['est_profit_amt'] = round(pnl_amt, 2)
             
+            # Performance Status Logic
             status = 'ACTIVE'
+            perf_status = f"ACTIVE ({pnl_pct:+.2f}% | {unrealized_r:+.2f}R)"
+            
             if direction == 'LONG':
                 if curr_price >= tp:
                     status = 'TARGET_HIT (+3R)'
+                    perf_status = 'TP HIT (+3.00 R)'
                 elif curr_price <= sl:
                     status = 'STOP_LOSS_HIT (-1R)'
-            else:
+                    perf_status = 'SL HIT (-1.00 R)'
+            else: # SHORT
                 if curr_price <= tp:
                     status = 'TARGET_HIT (+3R)'
+                    perf_status = 'TP HIT (+3.00 R)'
                 elif curr_price >= sl:
                     status = 'STOP_LOSS_HIT (-1R)'
+                    perf_status = 'SL HIT (-1.00 R)'
                     
+            trade['perf_status'] = perf_status
+            
             if status != 'ACTIVE':
                 trade['status'] = status
                 trade['exit_price'] = curr_price

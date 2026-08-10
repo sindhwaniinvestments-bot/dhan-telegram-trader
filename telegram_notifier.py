@@ -90,7 +90,7 @@ def format_trade_exit_alert(trade):
     return msg
 
 def format_daily_digest_alert(active_trades):
-    """Formats a daily 9:00 AM summary briefing of all active signals with Activation Date & Current Price."""
+    """Formats a daily 9:00 AM summary briefing of all active signals with Activation Date, Current Price, & Estimated Performance."""
     trade_count = len(active_trades)
     date_str = datetime.now().strftime('%Y-%m-%d')
     
@@ -108,10 +108,14 @@ def format_daily_digest_alert(active_trades):
     else:
         for idx, (t_id, trade) in enumerate(list(active_trades.items())[:10]):
             direction_emoji = "🟢 LONG" if trade['direction'] == 'LONG' else "🔴 SHORT"
+            perf = trade.get('perf_status', 'ACTIVE')
+            pct = trade.get('est_profit_pct', 0.0)
+            
             msg += (
                 f"`{idx+1}.` *{trade['symbol']}* ({direction_emoji})\n"
                 f"   ├ ⏰ Activated: `{trade.get('entry_date', 'LIVE')}`\n"
-                f"   └ Entry: `{trade['entry_price']}` | Curr: `{trade.get('current_price', trade['entry_price'])}` | SL: `{trade['sl_price']}` | TP: `{trade['tp_price']}`\n"
+                f"   ├ 💰 Entry: `{trade['entry_price']}` | Curr: `{trade.get('current_price', trade['entry_price'])}`\n"
+                f"   └ 📊 Est. Profit: `{pct:+.2f}%` ({trade.get('unrealized_r', 0.0):+.2f}R) | `{perf}`\n"
             )
             
         if trade_count > 10:
