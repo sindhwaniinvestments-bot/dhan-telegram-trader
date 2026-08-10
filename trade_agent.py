@@ -40,7 +40,7 @@ ALL_11_STRATEGIES = ALL_18_STRATEGIES
 
 class EliteTradeTrackerAgent:
     """
-    Elite Agent that tracks 100% of signals across ALL 18 strategies.
+    Elite Agent that tracks 100% of signals strictly for F&O Stocks & Indices across ALL 18 strategies.
     Strictly evaluates Target (+3R) & Stop Loss (-1R) based on Daily Closing Prices.
     Logs exact Days to Target (holding_days) and moves hit trades to Historical Signals.
     """
@@ -66,8 +66,8 @@ class EliteTradeTrackerAgent:
             print(f"⚠️ Error saving active_trades.json: {e}")
 
     def fetch_latest_closing_prices(self):
-        """Fetches the latest daily closing price for every stock symbol."""
-        raw_df = load_smc_signals()
+        """Fetches the latest daily closing price for every F&O stock and index symbol."""
+        raw_df = load_smc_signals(fo_only=True)
         latest_prices = {}
         if not raw_df.empty:
             last_rows = raw_df.groupby('symbol').tail(1)
@@ -77,11 +77,12 @@ class EliteTradeTrackerAgent:
 
     def scan_market_and_track(self, scan_window_bars=100):
         """
-        Scans all 18 strategies. Evaluates every signal against forward daily closing prices.
+        Scans all 18 strategies strictly for F&O Stocks & Indices.
+        Evaluates every signal against forward daily closing prices.
         If Target (+3R) or Stop Loss (-1R) is hit on closing price, archives to History.
         If and ONLY IF the trade is still open, places it in Active Trades.
         """
-        raw_df = load_smc_signals()
+        raw_df = load_smc_signals(fo_only=True)
         df = compute_smc_features(raw_df)
         df = calculate_3to1_rr_levels(df)
         df = generate_10_strategies(df)
