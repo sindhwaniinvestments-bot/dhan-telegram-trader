@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
@@ -35,10 +36,14 @@ jobs:
         run: |
           python run_daemon.py --single-run
 
-      - name: Commit & Push Updated Trade Data & History
+      - name: Commit & Push Updated Trade Data to Main & gh-pages Branches
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add active_trades.json trade_history.csv dashboard_data.json daemon_execution.log || true
-          git commit -m "Auto-update active trades & history log [skip ci]" || true
+          git add active_trades.json trade_history.csv dashboard_data.json daemon_execution.log .nojekyll || true
+          git commit -m "Auto-update active trades & cloud dashboard data [skip ci]" || true
           git push origin main || true
+          
+          # Sync to gh-pages branch for live web URL hosting
+          git checkout -B gh-pages
+          git push -f origin gh-pages

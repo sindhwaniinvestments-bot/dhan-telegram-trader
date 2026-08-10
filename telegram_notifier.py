@@ -13,9 +13,9 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-RAW_DATA_URL = "https://raw.githubusercontent.com/sindhwaniinvestments-bot/dhan-telegram-trader/main/dashboard_data.json"
 PAGES_URL = "https://sindhwaniinvestments-bot.github.io/dhan-telegram-trader/"
-DASHBOARD_URL = os.getenv("DASHBOARD_URL", RAW_DATA_URL)
+RAW_DATA_URL = "https://raw.githubusercontent.com/sindhwaniinvestments-bot/dhan-telegram-trader/main/dashboard_data.json"
+DASHBOARD_URL = os.getenv("DASHBOARD_URL", PAGES_URL)
 
 def send_telegram_message(message_text, pin=False):
     """Sends a formatted markdown message to Telegram, optionally pinning it."""
@@ -65,7 +65,8 @@ def format_master_strategy_catalog():
     msg = (
         f"📌 *MASTER QUANTITATIVE STRATEGY GUIDE*\n"
         f"🤖 *Dhan 24/7 Automated Trade Tracker*\n"
-        f"📊 *Live Trades JSON Data:* [View Active & Closed Trades]({RAW_DATA_URL})\n"
+        f"🌐 *100% Cloud Web Dashboard:* [View Active & Historical Signals]({DASHBOARD_URL})\n"
+        f"📊 *Raw Trades Data:* [View JSON Payload]({RAW_DATA_URL})\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"⚡ *Core Risk Model:* `3 : 1` (+3R Take Profit / -1R Stop Loss)\n"
         f"⚖️ *Position Size:* `1% Risk per Trade` ($1,000 Risk = 1R)\n"
@@ -116,7 +117,7 @@ def format_master_strategy_catalog():
         f"└ 📊 Win Rate: `87.10%` | Expectancy: `+2.20 R` per trade\n\n"
         
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📊 *Live Data URL:* {RAW_DATA_URL}"
+        f"🌐 *Live Dashboard URL:* {DASHBOARD_URL}"
     )
     return msg
 
@@ -138,7 +139,7 @@ def format_new_trade_alert(trade):
         f"📊 *Risk/Reward:* `3 : 1` (+3R Target)\n"
         f"⚖️ *Position Size:* `{trade['position_size']}` shares ($1,000 Risk)\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📊 *Live Data Link:* [View All Trades Data]({RAW_DATA_URL})\n"
+        f"🌐 *100% Cloud Web Dashboard:* [View All Trades]({DASHBOARD_URL})\n"
         f"🤖 *Automated 24/7 Dhan Trade Tracker*"
     )
     return msg
@@ -162,7 +163,7 @@ def format_trade_exit_alert(trade):
         f"🚪 *Exit Price:* `{trade['exit_price']}`\n"
         f"📈 *Final Yield:* `{trade['unrealized_r']} R`\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📊 *Historical Signals Data:* [View Closed Trades Data]({RAW_DATA_URL})\n"
+        f"🌐 *100% Cloud Web Dashboard:* [View Closed Trades]({DASHBOARD_URL})\n"
         f"🤖 *Automated 24/7 Dhan Trade Tracker*"
     )
     return msg
@@ -178,7 +179,7 @@ def send_all_active_signals_to_telegram(active_trades, perf_summary=None):
         summary_header = (
             f"📈 *PORTFOLIO PERFORMANCE & STRICTLY OPEN SIGNALS*\n"
             f"📅 *Timestamp:* `{date_str}`\n"
-            f"📊 *Live Trades JSON Data:* [View Active & Historical Signals]({RAW_DATA_URL})\n"
+            f"🌐 *100% Cloud Web Dashboard:* [View Active & Historical Signals]({DASHBOARD_URL})\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🎯 *Strategy Accuracy:* `{perf_summary['accuracy_pct']}%`\n"
             f"⏱️ *Avg Days to Target:* `{perf_summary.get('avg_days_to_target', 3.5)} Days`\n"
@@ -188,7 +189,7 @@ def send_all_active_signals_to_telegram(active_trades, perf_summary=None):
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🔢 *Trade Counts:* Open Positions: `{perf_summary['active_count']}` | Target Hits: `{perf_summary['win_count']}` | Stop Hits: `{perf_summary['loss_count']}`\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"📊 *Live Data URL Link:* {RAW_DATA_URL}\n"
+            f"🌐 *100% Cloud Dashboard URL:* {DASHBOARD_URL}\n"
             f"🤖 *Automated 24/7 Dhan Trade Tracker*"
         )
         send_telegram_message(summary_header)
@@ -224,7 +225,7 @@ def send_all_active_signals_to_telegram(active_trades, perf_summary=None):
                 f"   └ 📊 Est: `{pct:+.2f}%` ({trade.get('unrealized_r', 0.0):+.2f}R) | SL: `{trade['sl_price']}` | TP: `{trade['tp_price']}`\n\n"
             )
             
-        msg += f"━━━━━━━━━━━━━━━━━━━━━━\n📊 *Live Trades JSON:* {RAW_DATA_URL}\n🤖 *Automated 24/7 Dhan Trade Tracker*"
+        msg += f"━━━━━━━━━━━━━━━━━━━━━━\n🌐 *100% Cloud Web Dashboard:* {DASHBOARD_URL}\n🤖 *Automated 24/7 Dhan Trade Tracker*"
         send_telegram_message(msg)
 
 if __name__ == "__main__":
