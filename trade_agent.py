@@ -36,7 +36,8 @@ ALL_11_STRATEGIES = ALL_HIGH_ACCURACY_STRATEGIES
 class EliteTradeTrackerAgent:
     """
     Elite Agent tracking strictly HIGH-ACCURACY strategies (>= 50% Win Rate) on F&O Stocks & Indices.
-    Strictly evaluates Target (+3R) & Stop Loss (-1R) based on Daily Closing Prices.
+    Evaluates Target (+3R) & Stop Loss (-1R) against Daily Closing Prices AND Intraday High/Low.
+    Ensures NO closed/hit trades ever remain in Active Trades.
     """
     def __init__(self, risk_amount=1000.0, enable_telegram=True):
         self.risk_amount = risk_amount
@@ -72,8 +73,9 @@ class EliteTradeTrackerAgent:
     def scan_market_and_track(self, scan_window_bars=100):
         """
         Scans HIGH-ACCURACY strategies (>= 50% Win Rate).
-        Evaluates every signal against forward daily closing prices.
-        If Target (+3R) or Stop Loss (-1R) is hit on closing price, archives to History.
+        Evaluates every signal against forward daily closing prices AND intraday high/low bounds.
+        If Target (+3R) or Stop Loss (-1R) is hit, archives to History immediately.
+        Active Trades contains ONLY trades that are 100% strictly OPEN.
         """
         raw_df = load_smc_signals(fo_only=True)
         df = compute_smc_features(raw_df)
@@ -121,7 +123,7 @@ class EliteTradeTrackerAgent:
                         risk_per_share = abs(close_price - sl_price)
                         position_size = int(self.risk_amount / risk_per_share) if risk_per_share > 0 else 1
                         
-                        # Evaluate forward daily closing prices
+                        # Evaluate forward daily closing prices AND intraday high/low bounds
                         future_bars = sym_df[sym_df['day'] > bar_date]
                         
                         status = 'ACTIVE'
@@ -132,28 +134,30 @@ class EliteTradeTrackerAgent:
                         for _, f_row in future_bars.iterrows():
                             holding_days += 1
                             f_close = float(f_row['close'])
+                            f_high = float(f_row['high'])
+                            f_low = float(f_row['low'])
                             f_day = str(f_row['day'])[:10]
                             
                             if direction == 'LONG':
-                                if f_close >= tp_price:
+                                if f_close >= tp_price or f_high >= tp_price:
                                     status = 'TARGET_HIT (+3R)'
-                                    exit_price = f_close
+                                    exit_price = f_close if f_close >= tp_price else tp_price
                                     exit_date = f_day
                                     break
-                                elif f_close <= sl_price:
+                                elif f_close <= sl_price or f_low <= sl_price:
                                     status = 'STOP_LOSS_HIT (-1R)'
-                                    exit_price = f_close
+                                    exit_price = f_close if f_close <= sl_price else sl_price
                                     exit_date = f_day
                                     break
                             else: # SHORT
-                                if f_close <= tp_price:
+                                if f_close <= tp_price or f_low <= tp_price:
                                     status = 'TARGET_HIT (+3R)'
-                                    exit_price = f_close
+                                    exit_price = f_close if f_close <= tp_price else tp_price
                                     exit_date = f_day
                                     break
-                                elif f_close >= sl_price:
+                                elif f_close >= sl_price or f_high >= sl_price:
                                     status = 'STOP_LOSS_HIT (-1R)'
-                                    exit_price = f_close
+                                    exit_price = f_close if f_close >= sl_price else sl_price
                                     exit_date = f_day
                                     break
                                     
@@ -221,7 +225,6 @@ class EliteTradeTrackerAgent:
         if os.path.exists(HISTORY_CSV_PATH):
             try:
                 df_h = pd.read_csv(HISTORY_CSV_PATH)
-                # Keep ONLY high-accuracy strategies in history
                 valid_names = set(s['name'] for s in ALL_HIGH_ACCURACY_STRATEGIES.values())
                 df_h = df_h[df_h['strategy'].isin(valid_names)]
                 closed_trades = df_h.to_dict('records')
