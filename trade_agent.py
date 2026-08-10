@@ -67,14 +67,19 @@ class EliteTradeTrackerAgent:
         if os.path.exists(TRADES_JSON_PATH):
             try:
                 with open(TRADES_JSON_PATH, 'r') as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    # Filter out any non-ACTIVE trades
+                    return {k: v for k, v in data.items() if v.get('status') == 'ACTIVE'}
             except Exception:
                 return {}
         return {}
 
     def _save_active_trades(self):
+        # Save ONLY strictly ACTIVE trades
+        active_only = {k: v for k, v in self.active_trades.items() if v.get('status') == 'ACTIVE'}
         with open(TRADES_JSON_PATH, 'w') as f:
-            json.dump(self.active_trades, f, indent=4)
+            json.dump(active_only, f, indent=4)
+        self.active_trades = active_only
 
     def fetch_todays_open_prices(self):
         """Extracts Today's Opening Price (open) for all symbols efficiently."""
@@ -95,9 +100,10 @@ class EliteTradeTrackerAgent:
         return open_prices
 
     def get_portfolio_performance_summary(self):
-        """Calculates Accuracy %, Booked Profit, Booked Loss, Current Open Profit, and Trade Counts."""
-        active_count = len(self.active_trades)
-        active_list = list(self.active_trades.values())
+        """Calculates Accuracy %, Booked Profit, Booked Loss, Current Open Profit, Trade Counts, and Avg Days to Target."""
+        # Active trades strictly contain OPEN positions
+        active_list = [t for t in self.active_trades.values() if t.get('status') == 'ACTIVE']
+        active_count = len(active_list)
         
         unrealized_r = sum(t.get('unrealized_r', 0.0) for t in active_list)
         unrealized_pct = sum(t.get('est_profit_pct', 0.0) for t in active_list)
@@ -112,12 +118,16 @@ class EliteTradeTrackerAgent:
                 pass
                 
         closed_count = len(closed_trades)
-        wins = [t for t in closed_trades if 'TARGET_HIT' in str(t.get('status', '')) or t.get('unrealized_r', 0.0) > 0]
-        losses = [t for t in closed_trades if 'STOP_LOSS_HIT' in str(t.get('status', '')) or t.get('unrealized_r', 0.0) < 0]
+        wins = [t for t in closed_trades if 'TARGET_HIT' in str(t.get('status', '')) or float(t.get('unrealized_r', 0.0)) > 0]
+        losses = [t for t in closed_trades if 'STOP_LOSS_HIT' in str(t.get('status', '')) or float(t.get('unrealized_r', 0.0)) < 0]
         
         win_count = len(wins)
         loss_count = len(losses)
         accuracy_pct = round((win_count / closed_count * 100), 2) if closed_count > 0 else 0.0
+        
+        # Calculate Average Days to Target for winning trades
+        holding_days_list = [int(t.get('holding_days', 1)) for t in wins if 'holding_days' in t and pd.notna(t['holding_days'])]
+        avg_days_to_target = round(sum(holding_days_list) / len(holding_days_list), 1) if holding_days_list else 3.5
         
         booked_profit_r = round(sum(float(t.get('unrealized_r', 3.0)) for t in wins), 2)
         booked_loss_r = round(sum(abs(float(t.get('unrealized_r', -1.0))) for t in losses), 2)
@@ -132,6 +142,7 @@ class EliteTradeTrackerAgent:
             'win_count': win_count,
             'loss_count': loss_count,
             'accuracy_pct': accuracy_pct,
+            'avg_days_to_target': avg_days_to_target,
             'booked_profit_r': booked_profit_r,
             'booked_loss_r': booked_loss_r,
             'booked_profit_amt': booked_profit_amt,
@@ -151,6 +162,17 @@ class EliteTradeTrackerAgent:
         
         recent_bars = df.groupby('symbol').tail(scan_window_bars).reset_index()
         today_open_prices = self.fetch_todays_open_prices()
+        
+        # Load closed trades IDs to avoid re-adding previously closed trades
+        closed_ids = set()
+        if os.path.exists(HISTORY_CSV_PATH):
+            try:
+                df_h = pd.read_csv(HISTORY_CSV_PATH)
+                if 'trade_id' in df_h.columns:
+                    closed_ids = set(df_h['trade_id'].astype(str))
+            except Exception:
+                pass
+
         new_signals_found = 0
         
         for _, row in recent_bars.iterrows():
@@ -167,7 +189,8 @@ class EliteTradeTrackerAgent:
                 if row.get(strat_key) == True:
                     trade_id = f"{symbol}_{strat_key}_{bar_date}"
                     
-                    if trade_id not in self.active_trades:
+                    # Ignore if already in active trades or previously closed
+                    if trade_id not in self.active_trades and trade_id not in closed_ids:
                         direction = strat_info['direction']
                         sl_price = round(close_price - (1.0 * atr) if direction == 'LONG' else close_price + (1.0 * atr), 2)
                         tp_price = round(close_price + (3.0 * atr) if direction == 'LONG' else close_price - (3.0 * atr), 2)
@@ -206,7 +229,7 @@ class EliteTradeTrackerAgent:
         return self.active_trades
 
     def evaluate_open_positions(self, live_prices=None):
-        """Evaluates active trades against Today's Opening Price (open)."""
+        """Evaluates active trades against Today's Opening Price (open), closing SL/TP hit trades and calculating holding days."""
         if live_prices is None:
             live_prices = self.fetch_todays_open_prices()
             
@@ -219,6 +242,7 @@ class EliteTradeTrackerAgent:
             tp = trade['tp_price']
             entry = trade['entry_price']
             pos_size = trade.get('position_size', 1)
+            entry_date_str = trade.get('entry_date', str(datetime.now())[:10])
             
             curr_price = live_prices.get(symbol, trade['current_price'])
             trade['current_price'] = curr_price
@@ -240,7 +264,7 @@ class EliteTradeTrackerAgent:
             trade['est_profit_pct'] = round(pnl_pct, 2)
             trade['est_profit_amt'] = round(pnl_amt, 2)
             
-            # Performance Status Logic
+            # Check exit conditions
             status = 'ACTIVE'
             perf_status = f"ACTIVE ({pnl_pct:+.2f}% | {unrealized_r:+.2f}R)"
             
@@ -261,13 +285,27 @@ class EliteTradeTrackerAgent:
                     
             trade['perf_status'] = perf_status
             
+            # If SL hit or Target achieved -> REMOVE from active trades and log holding days
             if status != 'ACTIVE':
                 trade['status'] = status
                 trade['exit_price'] = curr_price
-                trade['exit_date'] = str(datetime.now())[:10]
+                today_date_str = str(datetime.now())[:10]
+                trade['exit_date'] = today_date_str
+                
+                # Calculate days to achieve target
+                try:
+                    d_entry = datetime.strptime(entry_date_str, '%Y-%m-%d')
+                    d_exit = datetime.strptime(today_date_str, '%Y-%m-%d')
+                    holding_days = max(1, (d_exit - d_entry).days)
+                except Exception:
+                    holding_days = 1
+                    
+                trade['holding_days'] = holding_days
                 closed_trades.append(trade)
+                
+                # REMOVE FROM ACTIVE TRADES IMMEDIATELY
                 del self.active_trades[trade_id]
-                print(f"🎯 TRADE CLOSED: [{symbol}] | Status: {status} | Final R: {unrealized_r} R")
+                print(f"🎯 TRADE CLOSED & REMOVED: [{symbol}] | Status: {status} | Final R: {unrealized_r} R | Took: {holding_days} days")
                 
                 if self.enable_telegram:
                     msg = format_trade_exit_alert(trade)

@@ -57,7 +57,7 @@ def format_new_trade_alert(trade):
         f"⏰ *Activated At:* `{trade.get('entry_date', 'LIVE')}`\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"💰 *Entry Price:* `{trade['entry_price']}`\n"
-        f"💲 *Current Price:* `{trade.get('current_price', trade['entry_price'])}`\n"
+        f"💲 *Today Open Price:* `{trade.get('current_price', trade['entry_price'])}`\n"
         f"🛑 *Stop Loss (-1R):* `{trade['sl_price']}`\n"
         f"🎁 *Take Profit (+3R):* `{trade['tp_price']}`\n"
         f"📊 *Risk/Reward:* `3 : 1` (+3R Target)\n"
@@ -68,9 +68,10 @@ def format_new_trade_alert(trade):
     return msg
 
 def format_trade_exit_alert(trade):
-    """Formats a markdown alert when a trade hits Stop Loss (-1R) or Take Profit (+3R)."""
+    """Formats a markdown alert when a trade hits Stop Loss (-1R) or Take Profit (+3R), displaying days to target."""
     status = trade['status']
     status_emoji = "🎉 TARGET HIT (+3R)" if "TARGET_HIT" in status else "🛑 STOP LOSS HIT (-1R)"
+    holding_days = trade.get('holding_days', 1)
     
     msg = (
         f"📢 *TRADE EXIT NOTIFICATION*\n"
@@ -78,7 +79,8 @@ def format_trade_exit_alert(trade):
         f"📌 *Symbol:* `{trade['symbol']}`\n"
         f"🏁 *Status:* {status_emoji}\n"
         f"🎯 *Strategy:* {trade['strategy']}\n"
-        f"⏰ *Activated At:* `{trade.get('entry_date', 'N/A')}`\n"
+        f"⏱️ *Days to Achieve Target:* `{holding_days} Days`\n"
+        f"⏰ *Activated Date:* `{trade.get('entry_date', 'N/A')}`\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"💰 *Entry Price:* `{trade['entry_price']}`\n"
         f"🚪 *Exit Price:* `{trade['exit_price']}`\n"
@@ -90,23 +92,24 @@ def format_trade_exit_alert(trade):
     return msg
 
 def send_all_active_signals_to_telegram(active_trades, perf_summary=None):
-    """Formats and sends ALL active stock trade signals + Performance Metrics to Telegram."""
-    trade_items = list(active_trades.items())
+    """Formats and sends STRICTLY ACTIVE stock trade signals + Performance Metrics to Telegram (excluding closed SL/TP hit trades)."""
+    open_active_trades = {k: v for k, v in active_trades.items() if v.get('status') == 'ACTIVE'}
+    trade_items = list(open_active_trades.items())
     total_trades = len(trade_items)
     date_str = datetime.now().strftime('%Y-%m-%d %H:%M')
     
-    # 1. Send Portfolio Performance Summary Header first
     if perf_summary:
         summary_header = (
-            f"📈 *PORTFOLIO PERFORMANCE & ACTIVE SIGNALS BRIEFING*\n"
+            f"📈 *PORTFOLIO PERFORMANCE & STRICTLY OPEN SIGNALS*\n"
             f"📅 *Timestamp:* `{date_str}`\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🎯 *Strategy Accuracy:* `{perf_summary['accuracy_pct']}%`\n"
+            f"⏱️ *Avg Days to Target:* `{perf_summary.get('avg_days_to_target', 3.5)} Days`\n"
             f"🟢 *Booked Profit (+3R Hits):* `+{perf_summary['booked_profit_r']} R` (`+${perf_summary['booked_profit_amt']:,.2f}`)\n"
             f"🛑 *Booked Loss (-1R Hits):* `-{perf_summary['booked_loss_r']} R` (`-${perf_summary['booked_loss_amt']:,.2f}`)\n"
             f"📈 *Current Open Profit:* `{perf_summary['unrealized_r']:+.2f} R` (`{perf_summary['unrealized_pct']:+.2f}%`)\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🔢 *Trade Counts:* Active: `{perf_summary['active_count']}` | Target Hits: `{perf_summary['win_count']}` | Stop Hits: `{perf_summary['loss_count']}`\n"
+            f"🔢 *Trade Counts:* Open Positions: `{perf_summary['active_count']}` | Target Hits: `{perf_summary['win_count']}` | Stop Hits: `{perf_summary['loss_count']}`\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🤖 *Automated 24/7 Dhan Trade Tracker*"
         )
@@ -115,7 +118,7 @@ def send_all_active_signals_to_telegram(active_trades, perf_summary=None):
     if total_trades == 0:
         return
 
-    chunk_size = 20
+    chunk_size = 15
     total_parts = (total_trades + chunk_size - 1) // chunk_size
 
     for part_idx in range(total_parts):
@@ -124,22 +127,22 @@ def send_all_active_signals_to_telegram(active_trades, perf_summary=None):
         chunk = trade_items[start_i:end_i]
         
         msg = (
-            f"📊 *ACTIVE SIGNALS LIST (Part {part_idx + 1}/{total_parts})*\n"
-            f"⚡ *Showing Stocks {start_i + 1} to {end_i} of {total_trades}*\n"
+            f"📊 *STRICTLY OPEN ACTIVE SIGNALS (Part {part_idx + 1}/{total_parts})*\n"
+            f"⚡ *Showing Open Stocks {start_i + 1} to {end_i} of {total_trades}*\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
         )
         
         for idx, (t_id, trade) in enumerate(chunk):
             item_num = start_i + idx + 1
             direction_emoji = "🟢 LONG" if trade['direction'] == 'LONG' else "🔴 SHORT"
-            perf = trade.get('perf_status', 'ACTIVE')
             pct = trade.get('est_profit_pct', 0.0)
+            strat_clean = str(trade['strategy']).replace('*', '').replace('_', ' ')
             
             msg += (
                 f"`{item_num}.` *{trade['symbol']}* ({direction_emoji})\n"
-                f"   ├ 🎯 `{trade['strategy']}`\n"
+                f"   ├ 🎯 `{strat_clean}`\n"
                 f"   ├ ⏰ Activated: `{trade.get('entry_date', 'LIVE')}`\n"
-                f"   ├ 💰 Entry: `{trade['entry_price']}` | Curr: `{trade.get('current_price', trade['entry_price'])}`\n"
+                f"   ├ 💰 Entry: `{trade['entry_price']}` | Today Open: `{trade.get('current_price', trade['entry_price'])}`\n"
                 f"   └ 📊 Est: `{pct:+.2f}%` ({trade.get('unrealized_r', 0.0):+.2f}R) | SL: `{trade['sl_price']}` | TP: `{trade['tp_price']}`\n\n"
             )
             
