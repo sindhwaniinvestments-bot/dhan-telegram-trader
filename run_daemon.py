@@ -24,8 +24,8 @@ def log_event(message):
         pass
 
 def run_single_cloud_scan():
-    """Runs a single cloud scan and dispatches ALL active stock trade signals + Performance Summary to Telegram."""
-    log_event("☁️ Executing Single Cloud Market Scan & Dispatching Performance Summary...")
+    """Runs a single cloud scan for strategies >= 50% Win Rate and dispatches active signals + Performance Summary to Telegram."""
+    log_event("☁️ Executing Single Cloud Market Scan (High-Accuracy >= 50% WR Only) & Dispatching Summary...")
     agent = EliteTradeTrackerAgent(enable_telegram=True)
     active_trades = agent.scan_market_and_track(scan_window_bars=100)
     perf_summary = agent.get_portfolio_performance_summary()
@@ -35,8 +35,8 @@ def run_single_cloud_scan():
     log_event("✅ Cloud Scan & Full Telegram Performance Dispatch Complete!")
 
 def run_unattended_daemon(poll_interval_seconds=10):
-    log_event("🚀 Starting 24/7 Unattended Telegram Trade Tracker Daemon...")
-    log_event("   Features: Live Trade Alerts + Daily 9:00 AM Full Active Signals Digest & Performance Briefing.")
+    log_event("🚀 Starting 24/7 Unattended Telegram Trade Tracker Daemon (>= 50% Win Rate Only)...")
+    log_event("   Features: Live High-Accuracy Trade Alerts + Daily 9:00 AM Full Active Signals Digest & Performance Briefing.")
     
     agent = EliteTradeTrackerAgent(enable_telegram=True)
     last_digest_date = None
@@ -48,8 +48,8 @@ def run_unattended_daemon(poll_interval_seconds=10):
             current_hour = now.hour
             
             active_trades = agent.scan_market_and_track(scan_window_bars=100)
-            live_prices = agent.fetch_todays_open_prices()
-            agent.evaluate_open_positions(live_prices=live_prices)
+            latest_prices = agent.fetch_latest_closing_prices()
+            agent.evaluate_open_positions(live_prices=latest_prices)
             
             # Daily 9:00 AM Digest Check (Sends ALL active stock signals + Performance Briefing)
             if current_hour == 9 and last_digest_date != today_str:
