@@ -85,9 +85,9 @@ class EliteTradeTrackerAgent:
             json.dump(active_only, f, indent=4)
         self.active_trades = active_only
 
-    def fetch_todays_open_prices(self):
-        """Extracts Today's Opening Price (open) for all symbols efficiently."""
-        open_prices = {}
+    def fetch_latest_closing_prices(self):
+        """Extracts the latest Daily Closing Price (close) for all symbols from smc_signals.csv."""
+        close_prices = {}
         try:
             filepath = os.path.join(DATA_DIR, "smc_signals.csv")
             if os.path.exists(filepath):
@@ -95,13 +95,16 @@ class EliteTradeTrackerAgent:
                 latest_bars = df_tail.groupby('symbol').last().reset_index()
                 for _, row in latest_bars.iterrows():
                     symbol = row['symbol']
-                    open_val = float(row['open'])
-                    if open_val > 0:
-                        open_prices[symbol] = open_val
+                    c_val = float(row['close'])
+                    if c_val > 0:
+                        close_prices[symbol] = c_val
         except Exception as e:
-            print(f"Notice: Extracting today's open prices: {e}")
+            print(f"Notice: Extracting daily closing prices: {e}")
 
-        return open_prices
+        return close_prices
+
+    def fetch_todays_open_prices(self):
+        return self.fetch_latest_closing_prices()
 
     def get_portfolio_performance_summary(self):
         """Calculates Accuracy %, Booked Profit, Booked Loss, Current Open Profit, Trade Counts, and Avg Days to Target."""
@@ -156,14 +159,14 @@ class EliteTradeTrackerAgent:
         }
 
     def scan_market_and_track(self, scan_window_bars=100):
-        """Scans market data feed, detects Strategy setups, and tracks positions."""
+        """Scans market data feed, detects Strategy setups, and tracks active positions."""
         raw_df = load_smc_signals()
         df = compute_smc_features(raw_df)
         df = calculate_3to1_rr_levels(df)
         df = generate_10_strategies(df)
         
         recent_bars = df.groupby('symbol').tail(scan_window_bars).reset_index()
-        today_open_prices = self.fetch_todays_open_prices()
+        latest_close_prices = self.fetch_latest_closing_prices()
         
         closed_ids = set()
         if os.path.exists(HISTORY_CSV_PATH):
@@ -179,7 +182,7 @@ class EliteTradeTrackerAgent:
         for _, row in recent_bars.iterrows():
             symbol = row['symbol']
             close_price = float(row['close'])
-            today_open = today_open_prices.get(symbol, float(row['open']))
+            latest_close = latest_close_prices.get(symbol, close_price)
             atr = float(row['atr'])
             bar_date = str(row['day'])[:10]
             
@@ -211,7 +214,7 @@ class EliteTradeTrackerAgent:
                             'position_size': position_size,
                             'status': 'ACTIVE',
                             'perf_status': 'ACTIVE',
-                            'current_price': today_open,
+                            'current_price': latest_close,
                             'unrealized_r': 0.0,
                             'est_profit_pct': 0.0,
                             'est_profit_amt': 0.0
@@ -219,7 +222,7 @@ class EliteTradeTrackerAgent:
                         
                         self.active_trades[trade_id] = new_trade
                         new_signals_found += 1
-                        print(f"⚡ NEW TRADE SIGNAL: [{symbol}] | Strategy: {strat_info['name']} | Entry: {close_price} | Today Open: {today_open}")
+                        print(f"⚡ NEW TRADE SIGNAL: [{symbol}] | Strategy: {strat_info['name']} | Entry: {close_price}")
                         
                         if self.enable_telegram:
                             msg = format_new_trade_alert(new_trade)
@@ -229,9 +232,13 @@ class EliteTradeTrackerAgent:
         return self.active_trades
 
     def evaluate_open_positions(self, live_prices=None):
-        """Evaluates active trades against Today's Opening Price (open), closing SL/TP hit trades and calculating holding days."""
+        """
+        Evaluates active trades against Daily Closing Prices across forward bars.
+        If a trade hits SL or Target based on Closing Price, it is REMOVED from active_trades and recorded in history.
+        """
+        raw_df = load_smc_signals()
         if live_prices is None:
-            live_prices = self.fetch_todays_open_prices()
+            live_prices = self.fetch_latest_closing_prices()
             
         closed_trades = []
         
@@ -242,65 +249,76 @@ class EliteTradeTrackerAgent:
             tp = trade['tp_price']
             entry = trade['entry_price']
             pos_size = trade.get('position_size', 1)
-            entry_date_str = trade.get('entry_date', str(datetime.now())[:10])
+            entry_date_str = trade.get('entry_date', '')
             
+            # Fetch forward bars for this symbol after entry_date
+            sym_df = raw_df[(raw_df['symbol'] == symbol) & (raw_df['day'] > entry_date_str)].sort_values('day')
+            
+            status = 'ACTIVE'
+            exit_price = entry
+            exit_date = entry_date_str
+            holding_days = 0
+            
+            # Scan forward bars to check closing prices
+            for _, f_row in sym_df.iterrows():
+                holding_days += 1
+                f_close = float(f_row['close'])
+                f_day = str(f_row['day'])[:10]
+                
+                if direction == 'LONG':
+                    if f_close >= tp:
+                        status = 'TARGET_HIT (+3R)'
+                        exit_price = f_close
+                        exit_date = f_day
+                        break
+                    elif f_close <= sl:
+                        status = 'STOP_LOSS_HIT (-1R)'
+                        exit_price = f_close
+                        exit_date = f_day
+                        break
+                else: # SHORT
+                    if f_close <= tp:
+                        status = 'TARGET_HIT (+3R)'
+                        exit_price = f_close
+                        exit_date = f_day
+                        break
+                    elif f_close >= sl:
+                        status = 'STOP_LOSS_HIT (-1R)'
+                        exit_price = f_close
+                        exit_date = f_day
+                        break
+                        
+            # If trade has not hit SL or TP, evaluate current status based on latest closing price
             curr_price = live_prices.get(symbol, trade['current_price'])
             trade['current_price'] = curr_price
-            
             atr_dist = abs(entry - sl)
             
             if direction == 'LONG':
                 pnl_per_share = curr_price - entry
-                pnl_pct = (pnl_per_share / entry) * 100
-            else: # SHORT
+            else:
                 pnl_per_share = entry - curr_price
-                pnl_pct = (pnl_per_share / entry) * 100
                 
+            pnl_pct = (pnl_per_share / entry) * 100
             pnl_amt = pnl_per_share * pos_size
             unrealized_r = round(pnl_per_share / atr_dist, 2) if atr_dist > 0 else 0.0
             
             trade['unrealized_r'] = unrealized_r
             trade['est_profit_pct'] = round(pnl_pct, 2)
             trade['est_profit_amt'] = round(pnl_amt, 2)
+            trade['perf_status'] = f"ACTIVE ({pnl_pct:+.2f}% | {unrealized_r:+.2f}R)"
             
-            status = 'ACTIVE'
-            perf_status = f"ACTIVE ({pnl_pct:+.2f}% | {unrealized_r:+.2f}R)"
-            
-            if direction == 'LONG':
-                if curr_price >= tp:
-                    status = 'TARGET_HIT (+3R)'
-                    perf_status = 'TP HIT (+3.00 R)'
-                elif curr_price <= sl:
-                    status = 'STOP_LOSS_HIT (-1R)'
-                    perf_status = 'SL HIT (-1.00 R)'
-            else: # SHORT
-                if curr_price <= tp:
-                    status = 'TARGET_HIT (+3R)'
-                    perf_status = 'TP HIT (+3.00 R)'
-                elif curr_price >= sl:
-                    status = 'STOP_LOSS_HIT (-1R)'
-                    perf_status = 'SL HIT (-1.00 R)'
-                    
-            trade['perf_status'] = perf_status
-            
+            # IF SL OR TARGET HIT BASED ON DAILY CLOSING PRICE -> REMOVE FROM ACTIVE TRADES
             if status != 'ACTIVE':
                 trade['status'] = status
-                trade['exit_price'] = curr_price
-                today_date_str = str(datetime.now())[:10]
-                trade['exit_date'] = today_date_str
+                trade['exit_price'] = exit_price
+                trade['exit_date'] = exit_date
+                trade['holding_days'] = holding_days if holding_days > 0 else 1
+                trade['unrealized_r'] = 3.0 if 'TARGET_HIT' in status else -1.0
                 
-                try:
-                    d_entry = datetime.strptime(entry_date_str, '%Y-%m-%d')
-                    d_exit = datetime.strptime(today_date_str, '%Y-%m-%d')
-                    holding_days = max(1, (d_exit - d_entry).days)
-                except Exception:
-                    holding_days = 1
-                    
-                trade['holding_days'] = holding_days
                 closed_trades.append(trade)
-                
+                # REMOVE FROM ACTIVE TRADES IMMEDIATELY
                 del self.active_trades[trade_id]
-                print(f"🎯 TRADE CLOSED & REMOVED: [{symbol}] | Status: {status} | Final R: {unrealized_r} R | Took: {holding_days} days")
+                print(f"🎯 TRADE CLOSED & REMOVED (Closing Price): [{symbol}] | Status: {status} | Took: {trade['holding_days']} days")
                 
                 if self.enable_telegram:
                     msg = format_trade_exit_alert(trade)
