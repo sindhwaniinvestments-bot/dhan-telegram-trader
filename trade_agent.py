@@ -94,6 +94,54 @@ class EliteTradeTrackerAgent:
 
         return open_prices
 
+    def get_portfolio_performance_summary(self):
+        """Calculates Accuracy %, Booked Profit, Booked Loss, Current Open Profit, and Trade Counts."""
+        active_count = len(self.active_trades)
+        active_list = list(self.active_trades.values())
+        
+        unrealized_r = sum(t.get('unrealized_r', 0.0) for t in active_list)
+        unrealized_pct = sum(t.get('est_profit_pct', 0.0) for t in active_list)
+        unrealized_amt = sum(t.get('est_profit_amt', 0.0) for t in active_list)
+        
+        closed_trades = []
+        if os.path.exists(HISTORY_CSV_PATH):
+            try:
+                df_hist = pd.read_csv(HISTORY_CSV_PATH)
+                closed_trades = df_hist.to_dict('records')
+            except Exception:
+                pass
+                
+        closed_count = len(closed_trades)
+        wins = [t for t in closed_trades if 'TARGET_HIT' in str(t.get('status', '')) or t.get('unrealized_r', 0.0) > 0]
+        losses = [t for t in closed_trades if 'STOP_LOSS_HIT' in str(t.get('status', '')) or t.get('unrealized_r', 0.0) < 0]
+        
+        win_count = len(wins)
+        loss_count = len(losses)
+        accuracy_pct = round((win_count / closed_count * 100), 2) if closed_count > 0 else 0.0
+        
+        booked_profit_r = round(sum(float(t.get('unrealized_r', 3.0)) for t in wins), 2)
+        booked_loss_r = round(sum(abs(float(t.get('unrealized_r', -1.0))) for t in losses), 2)
+        
+        booked_profit_amt = round(booked_profit_r * self.risk_amount, 2)
+        booked_loss_amt = round(booked_loss_r * self.risk_amount, 2)
+        net_realized_amt = booked_profit_amt - booked_loss_amt
+        
+        return {
+            'active_count': active_count,
+            'closed_count': closed_count,
+            'win_count': win_count,
+            'loss_count': loss_count,
+            'accuracy_pct': accuracy_pct,
+            'booked_profit_r': booked_profit_r,
+            'booked_loss_r': booked_loss_r,
+            'booked_profit_amt': booked_profit_amt,
+            'booked_loss_amt': booked_loss_amt,
+            'net_realized_amt': net_realized_amt,
+            'unrealized_r': round(unrealized_r, 2),
+            'unrealized_pct': round(unrealized_pct, 2),
+            'unrealized_amt': round(unrealized_amt, 2)
+        }
+
     def scan_market_and_track(self, scan_window_bars=100):
         """Scans market data feed, detects Strategy setups, and tracks positions."""
         raw_df = load_smc_signals()

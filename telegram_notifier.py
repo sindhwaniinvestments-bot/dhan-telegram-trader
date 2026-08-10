@@ -89,15 +89,30 @@ def format_trade_exit_alert(trade):
     )
     return msg
 
-def send_all_active_signals_to_telegram(active_trades):
-    """Formats and sends ALL active stock trade signals to Telegram without truncation."""
+def send_all_active_signals_to_telegram(active_trades, perf_summary=None):
+    """Formats and sends ALL active stock trade signals + Performance Metrics to Telegram."""
     trade_items = list(active_trades.items())
     total_trades = len(trade_items)
     date_str = datetime.now().strftime('%Y-%m-%d %H:%M')
     
+    # 1. Send Portfolio Performance Summary Header first
+    if perf_summary:
+        summary_header = (
+            f"📈 *PORTFOLIO PERFORMANCE & ACTIVE SIGNALS BRIEFING*\n"
+            f"📅 *Timestamp:* `{date_str}`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎯 *Strategy Accuracy:* `{perf_summary['accuracy_pct']}%`\n"
+            f"🟢 *Booked Profit (+3R Hits):* `+{perf_summary['booked_profit_r']} R` (`+${perf_summary['booked_profit_amt']:,.2f}`)\n"
+            f"🛑 *Booked Loss (-1R Hits):* `-{perf_summary['booked_loss_r']} R` (`-${perf_summary['booked_loss_amt']:,.2f}`)\n"
+            f"📈 *Current Open Profit:* `{perf_summary['unrealized_r']:+.2f} R` (`{perf_summary['unrealized_pct']:+.2f}%`)\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔢 *Trade Counts:* Active: `{perf_summary['active_count']}` | Target Hits: `{perf_summary['win_count']}` | Stop Hits: `{perf_summary['loss_count']}`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 *Automated 24/7 Dhan Trade Tracker*"
+        )
+        send_telegram_message(summary_header)
+        
     if total_trades == 0:
-        msg = f"☀️ *ACTIVE SIGNALS DIGEST* ({date_str})\n━━━━━━━━━━━━━━━━━━━━━━\n🟢 *No active setups open.*"
-        send_telegram_message(msg)
         return
 
     chunk_size = 20
@@ -109,8 +124,7 @@ def send_all_active_signals_to_telegram(active_trades):
         chunk = trade_items[start_i:end_i]
         
         msg = (
-            f"📊 *ACTIVE SIGNALS DIGEST (Part {part_idx + 1}/{total_parts})*\n"
-            f"📅 *Timestamp:* `{date_str}`\n"
+            f"📊 *ACTIVE SIGNALS LIST (Part {part_idx + 1}/{total_parts})*\n"
             f"⚡ *Showing Stocks {start_i + 1} to {end_i} of {total_trades}*\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
         )
@@ -131,11 +145,3 @@ def send_all_active_signals_to_telegram(active_trades):
             
         msg += "━━━━━━━━━━━━━━━━━━━━━━\n🤖 *Automated 24/7 Dhan Trade Tracker*"
         send_telegram_message(msg)
-
-if __name__ == "__main__":
-    import json
-    active_path = r"d:\Monkeycode\github\active_trades.json"
-    if os.path.exists(active_path):
-        active = json.load(open(active_path))
-        print(f"Sending all {len(active)} active stock signals to Telegram...")
-        send_all_active_signals_to_telegram(active)

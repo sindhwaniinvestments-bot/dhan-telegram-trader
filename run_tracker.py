@@ -8,12 +8,16 @@ from trade_agent import EliteTradeTrackerAgent, ELITE_STRATEGIES
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-def print_tracker_dashboard(active_trades):
+def print_tracker_dashboard(agent, active_trades):
+    perf = agent.get_portfolio_performance_summary()
+    
     print("=" * 145)
     print(f"🤖 LIVE ELITE TRADE TRACKER DASHBOARD | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("   Price Feed: Today's Opening Price (open) vs Signal Entry Price (close)")
-    print("   Active Strategies: S1 (95.25%), S3 (87.73%), S6 (85.71%), S7 (100%), S9 (95.06%), S10 (88.24%)")
-    print("   Risk/Reward Model: 3:1 (+3R Take Profit / -1R Stop Loss)")
+    print(f"   🎯 Strategy Accuracy (Win Rate): {perf['accuracy_pct']}%")
+    print(f"   🟢 Booked Profit (+3R Hits): +{perf['booked_profit_r']} R (+${perf['booked_profit_amt']:,.2f})")
+    print(f"   🛑 Booked Loss (-1R Hits): -{perf['booked_loss_r']} R (-${perf['booked_loss_amt']:,.2f})")
+    print(f"   📈 Current Open Profit: {perf['unrealized_r']:+.2f} R ({perf['unrealized_pct']:+.2f}% | +${perf['unrealized_amt']:,.2f})")
+    print(f"   🔢 Trade Counts: Active Open: {perf['active_count']} | Target Hits (+3R): {perf['win_count']} | Stop Hits (-1R): {perf['loss_count']} | Total Analyzed: {perf['active_count'] + perf['closed_count']}")
     print("=" * 145)
     
     if not active_trades:
@@ -29,18 +33,13 @@ def print_tracker_dashboard(active_trades):
     
     print(df_trades[available_cols].to_string(index=False))
     print("=" * 145)
-    
-    total_unrealized_r = df_trades['unrealized_r'].sum() if 'unrealized_r' in df_trades.columns else 0.0
-    active_count = len(df_trades)
-    print(f"Summary: Active Signals Tracked: {active_count} | Combined Portfolio Open Exposure: {round(total_unrealized_r, 2)} R")
-    print("=" * 145)
 
 def main():
     agent = EliteTradeTrackerAgent()
     active_trades = agent.scan_market_and_track(scan_window_bars=100)
     open_prices = agent.fetch_todays_open_prices()
     agent.evaluate_open_positions(live_prices=open_prices)
-    print_tracker_dashboard(active_trades)
+    print_tracker_dashboard(agent, active_trades)
 
 if __name__ == "__main__":
     main()
