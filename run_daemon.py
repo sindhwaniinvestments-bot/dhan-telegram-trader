@@ -5,15 +5,18 @@ from datetime import datetime
 from trade_agent import EliteTradeTrackerAgent
 from telegram_notifier import send_all_active_signals_to_telegram
 
-# Ensure UTF-8 stdout encoding
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 LOG_FILE = r"d:\Monkeycode\github\daemon_execution.log"
 
 def log_event(message):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     formatted = f"[{timestamp}] {message}"
-    print(formatted)
+    try:
+        print(formatted)
+    except Exception:
+        pass
     try:
         with open(LOG_FILE, 'a', encoding='utf-8') as f:
             f.write(formatted + "\n")
