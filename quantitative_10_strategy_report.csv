@@ -1,0 +1,11 @@
+Strategy Name,Direction,Total Trades,Win Rate (%),Profit Factor,EV per Trade (R),Total Yield (R),Max Drawdown (R)
+Strategy 1: Bullish OB + FVG Confluence,LONG,295,95.25,67.46,2.6,766.78,1.66
+Strategy 2: Liquidity Sweep + Displacement,LONG,166,36.75,1.23,0.14,22.69,19.99
+Strategy 3: Volume Spike + Order Block Breakout,LONG,383,87.73,20.63,2.25,861.25,3.08
+Strategy 4: ATR Compression Expansion,LONG,1593,33.15,1.11,0.08,119.91,38.04
+Strategy 5: Displacement + FVG Entry,LONG,2468,39.99,1.44,0.26,630.58,30.18
+Strategy 6: Short High Liquidity Sweep,SHORT,42,85.71,16.42,2.27,95.2,2.09
+Strategy 7: SMC Super Signal (OB+FVG+Disp),LONG,2,100.0,5959374.26,2.98,5.96,0.0
+Strategy 8: Volume Exhaustion at 20D Low,LONG,1105,41.18,1.37,0.21,231.7,20.22
+Strategy 9: Momentum + OB Support,LONG,81,95.06,56.42,2.49,201.52,1.02
+Strategy 10: Target3D Level + SMC Hybrid,LONG,17,88.24,20.02,2.27,38.64,1.02

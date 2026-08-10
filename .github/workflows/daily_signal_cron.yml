@@ -1,0 +1,32 @@
+name: 24/7 Cloud Trade Tracker & Daily 9:00 AM Telegram Briefing
+
+on:
+  schedule:
+    # 03:30 UTC = 09:00 AM IST (Indian Standard Time)
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-trade-tracker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy requests python-dotenv
+
+      - name: Execute Daily 9:00 AM Signal Scan & Dispatch Telegram Digest
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python run_daemon.py --single-run

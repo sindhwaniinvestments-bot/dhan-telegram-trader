@@ -1,0 +1,13 @@
+# Environment & Secrets
+.env
+
+# Active state & trade logs
+active_trades.json
+trade_history.csv
+daemon_execution.log
+__pycache__/
+*.pyc
+
+# Local OS files
+.DS_Store
+Thumbs.db
