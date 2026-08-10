@@ -89,37 +89,53 @@ def format_trade_exit_alert(trade):
     )
     return msg
 
-def format_daily_digest_alert(active_trades):
-    """Formats a daily 9:00 AM summary briefing of all active signals with Activation Date, Current Price, & Estimated Performance."""
-    trade_count = len(active_trades)
-    date_str = datetime.now().strftime('%Y-%m-%d')
+def send_all_active_signals_to_telegram(active_trades):
+    """Formats and sends ALL active stock trade signals to Telegram without truncation."""
+    trade_items = list(active_trades.items())
+    total_trades = len(trade_items)
+    date_str = datetime.now().strftime('%Y-%m-%d %H:%M')
     
-    msg = (
-        f"☀️ *DAILY 9:00 AM ACTIVE SIGNALS DIGEST*\n"
-        f"📅 *Date:* `{date_str}`\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📊 *Active Signals Monitored:* `{trade_count}`\n"
-        f"⚡ *Target R:R:* `3 : 1` (+3R / -1R)\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━\n"
-    )
-    
-    if trade_count == 0:
-        msg += "🟢 *No active setups open. Waiting for market open entries.*"
-    else:
-        for idx, (t_id, trade) in enumerate(list(active_trades.items())[:10]):
+    if total_trades == 0:
+        msg = f"☀️ *ACTIVE SIGNALS DIGEST* ({date_str})\n━━━━━━━━━━━━━━━━━━━━━━\n🟢 *No active setups open.*"
+        send_telegram_message(msg)
+        return
+
+    chunk_size = 20
+    total_parts = (total_trades + chunk_size - 1) // chunk_size
+
+    for part_idx in range(total_parts):
+        start_i = part_idx * chunk_size
+        end_i = min((part_idx + 1) * chunk_size, total_trades)
+        chunk = trade_items[start_i:end_i]
+        
+        msg = (
+            f"📊 *ACTIVE SIGNALS DIGEST (Part {part_idx + 1}/{total_parts})*\n"
+            f"📅 *Timestamp:* `{date_str}`\n"
+            f"⚡ *Showing Stocks {start_i + 1} to {end_i} of {total_trades}*\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        )
+        
+        for idx, (t_id, trade) in enumerate(chunk):
+            item_num = start_i + idx + 1
             direction_emoji = "🟢 LONG" if trade['direction'] == 'LONG' else "🔴 SHORT"
             perf = trade.get('perf_status', 'ACTIVE')
             pct = trade.get('est_profit_pct', 0.0)
             
             msg += (
-                f"`{idx+1}.` *{trade['symbol']}* ({direction_emoji})\n"
+                f"`{item_num}.` *{trade['symbol']}* ({direction_emoji})\n"
+                f"   ├ 🎯 `{trade['strategy']}`\n"
                 f"   ├ ⏰ Activated: `{trade.get('entry_date', 'LIVE')}`\n"
                 f"   ├ 💰 Entry: `{trade['entry_price']}` | Curr: `{trade.get('current_price', trade['entry_price'])}`\n"
-                f"   └ 📊 Est. Profit: `{pct:+.2f}%` ({trade.get('unrealized_r', 0.0):+.2f}R) | `{perf}`\n"
+                f"   └ 📊 Est: `{pct:+.2f}%` ({trade.get('unrealized_r', 0.0):+.2f}R) | SL: `{trade['sl_price']}` | TP: `{trade['tp_price']}`\n\n"
             )
             
-        if trade_count > 10:
-            msg += f"\n... and `{trade_count - 10}` more active signals tracked."
-            
-    msg += "\n━━━━━━━━━━━━━━━━━━━━━━\n🤖 *Automated 24/7 Dhan Trade Tracker*"
-    return msg
+        msg += "━━━━━━━━━━━━━━━━━━━━━━\n🤖 *Automated 24/7 Dhan Trade Tracker*"
+        send_telegram_message(msg)
+
+if __name__ == "__main__":
+    import json
+    active_path = r"d:\Monkeycode\github\active_trades.json"
+    if os.path.exists(active_path):
+        active = json.load(open(active_path))
+        print(f"Sending all {len(active)} active stock signals to Telegram...")
+        send_all_active_signals_to_telegram(active)

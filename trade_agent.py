@@ -77,24 +77,28 @@ class EliteTradeTrackerAgent:
             json.dump(self.active_trades, f, indent=4)
 
     def fetch_live_prices(self):
-        """Fetches latest prices from live tick files in D:\\dhan automation\\data if available."""
+        """Fetches latest Last Traded Price (ltp) from live tick files in D:\\dhan automation\\data."""
         latest_prices = {}
-        ticker_files = glob.glob(os.path.join(DATA_DIR, "ticks_ticker_*.csv"))
+        tick_files = glob.glob(os.path.join(DATA_DIR, "ticks_*.csv"))
         
-        if ticker_files:
-            latest_file = max(ticker_files, key=os.path.getmtime)
+        if tick_files:
+            latest_file = max(tick_files, key=os.path.getmtime)
             try:
-                df_ticks = pd.read_csv(latest_file).tail(500)
-                if 'symbol' in df_ticks.columns and 'last_price' in df_ticks.columns:
+                df_ticks = pd.read_csv(latest_file).tail(5000)
+                price_col = None
+                for col in ['ltp', 'last_price', 'close']:
+                    if col in df_ticks.columns:
+                        price_col = col
+                        break
+                        
+                if price_col and 'symbol' in df_ticks.columns:
                     latest = df_ticks.groupby('symbol').last().reset_index()
                     for _, r in latest.iterrows():
-                        latest_prices[r['symbol']] = float(r['last_price'])
-                elif 'symbol' in df_ticks.columns and 'close' in df_ticks.columns:
-                    latest = df_ticks.groupby('symbol').last().reset_index()
-                    for _, r in latest.iterrows():
-                        latest_prices[r['symbol']] = float(r['close'])
-            except Exception:
-                pass
+                        val = float(r[price_col])
+                        if val > 0:
+                            latest_prices[r['symbol']] = val
+            except Exception as e:
+                print(f"Notice: Reading live tick file {os.path.basename(latest_file)}: {e}")
 
         return latest_prices
 
@@ -160,7 +164,7 @@ class EliteTradeTrackerAgent:
         return self.active_trades
 
     def evaluate_open_positions(self, live_prices=None):
-        """Evaluates active trades against live prices, calculating Estimated Profit % & R-Yield."""
+        """Evaluates active trades against live ltp prices, calculating Estimated Profit % & R-Yield."""
         if live_prices is None:
             live_prices = self.fetch_live_prices()
             

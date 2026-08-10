@@ -3,7 +3,7 @@ import io
 import time
 from datetime import datetime
 from trade_agent import EliteTradeTrackerAgent
-from telegram_notifier import send_telegram_message, format_daily_digest_alert
+from telegram_notifier import send_all_active_signals_to_telegram
 
 # Ensure UTF-8 stdout encoding
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -21,19 +21,18 @@ def log_event(message):
         pass
 
 def run_single_cloud_scan():
-    """Runs a single cloud scan and dispatches Telegram notifications (for GitHub Actions Cloud Cron)."""
-    log_event("☁️ Executing Single Cloud Market Scan & Dispatching Telegram Digest...")
+    """Runs a single cloud scan and dispatches ALL active stock trade signals to Telegram."""
+    log_event("☁️ Executing Single Cloud Market Scan & Dispatching ALL Active Stock Signals...")
     agent = EliteTradeTrackerAgent(enable_telegram=True)
     active_trades = agent.scan_market_and_track(scan_window_bars=100)
     
-    # Send daily briefing digest to Telegram
-    digest_msg = format_daily_digest_alert(active_trades)
-    send_telegram_message(digest_msg)
-    log_event("✅ Cloud Scan & Telegram Dispatch Complete!")
+    # Send ALL active stock trade signals to Telegram
+    send_all_active_signals_to_telegram(active_trades)
+    log_event("✅ Cloud Scan & Full Telegram Dispatch Complete!")
 
 def run_unattended_daemon(poll_interval_seconds=10):
     log_event("🚀 Starting 24/7 Unattended Telegram Trade Tracker Daemon...")
-    log_event("   Features: Live Trade Alerts + Daily 9:00 AM Active Signals Digest.")
+    log_event("   Features: Live Trade Alerts + Daily 9:00 AM Full Active Signals Digest.")
     
     agent = EliteTradeTrackerAgent(enable_telegram=True)
     last_digest_date = None
@@ -48,11 +47,10 @@ def run_unattended_daemon(poll_interval_seconds=10):
             live_prices = agent.fetch_live_prices()
             agent.evaluate_open_positions(live_prices=live_prices)
             
-            # Daily 9:00 AM Digest Check
+            # Daily 9:00 AM Digest Check (Sends ALL active stock signals)
             if current_hour == 9 and last_digest_date != today_str:
-                log_event(f"⏰ 9:00 AM Triggered! Dispatching Daily Active Signals Digest to Telegram...")
-                digest_msg = format_daily_digest_alert(active_trades)
-                send_telegram_message(digest_msg)
+                log_event(f"⏰ 9:00 AM Triggered! Dispatching ALL Active Stock Signals to Telegram...")
+                send_all_active_signals_to_telegram(active_trades)
                 last_digest_date = today_str
                 
             time.sleep(poll_interval_seconds)
