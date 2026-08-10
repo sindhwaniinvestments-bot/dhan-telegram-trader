@@ -3,8 +3,8 @@ import numpy as np
 
 def generate_10_strategies(df):
     """
-    Formulates 10 Proprietary Quantitative Strategies tailored to SMC, Order Blocks,
-    Fair Value Gaps, Liquidity Sweeps, and Price Action signals.
+    Formulates Quantitative Strategies tailored to SMC, Order Blocks,
+    Fair Value Gaps, Liquidity Sweeps, Price Action, and Volume/OI Build-Up signals.
     """
     df = df.copy()
     
@@ -41,4 +41,10 @@ def generate_10_strategies(df):
     else:
         df['strat_10_target3d_smc_hybrid'] = df['swp_low_clean'] & df['buy_ob_clean'] & df['vol_spike']
         
+    # Strategy 11: Positional Volume & Open Interest (OI) Build-Up Breakout
+    df['vol_sma20'] = df.groupby('symbol')['volume'].transform(lambda x: x.rolling(20, min_periods=5).mean())
+    df['vol_ratio'] = df['volume'] / (df['vol_sma20'] + 1e-5)
+    df['sma20'] = df.groupby('symbol')['close'].transform(lambda x: x.rolling(20, min_periods=5).mean())
+    df['strat_11_positional_vol_oi'] = (df['vol_ratio'] >= 1.8) & (df['close'] > df['sma20']) & df['buy_ob_clean']
+
     return df
