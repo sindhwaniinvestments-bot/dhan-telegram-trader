@@ -76,45 +76,39 @@ class EliteTradeTrackerAgent:
         with open(TRADES_JSON_PATH, 'w') as f:
             json.dump(self.active_trades, f, indent=4)
 
-    def fetch_live_prices(self):
-        """Fetches latest Last Traded Price (ltp) from live tick files in D:\\dhan automation\\data."""
-        latest_prices = {}
-        tick_files = glob.glob(os.path.join(DATA_DIR, "ticks_*.csv"))
-        
-        if tick_files:
-            latest_file = max(tick_files, key=os.path.getmtime)
-            try:
-                df_ticks = pd.read_csv(latest_file).tail(5000)
-                price_col = None
-                for col in ['ltp', 'last_price', 'close']:
-                    if col in df_ticks.columns:
-                        price_col = col
-                        break
-                        
-                if price_col and 'symbol' in df_ticks.columns:
-                    latest = df_ticks.groupby('symbol').last().reset_index()
-                    for _, r in latest.iterrows():
-                        val = float(r[price_col])
-                        if val > 0:
-                            latest_prices[r['symbol']] = val
-            except Exception as e:
-                print(f"Notice: Reading live tick file {os.path.basename(latest_file)}: {e}")
+    def fetch_todays_open_prices(self):
+        """Extracts Today's Opening Price (open) for all symbols efficiently."""
+        open_prices = {}
+        try:
+            filepath = os.path.join(DATA_DIR, "smc_signals.csv")
+            if os.path.exists(filepath):
+                df_tail = pd.read_csv(filepath).tail(5000)
+                latest_bars = df_tail.groupby('symbol').last().reset_index()
+                for _, row in latest_bars.iterrows():
+                    symbol = row['symbol']
+                    open_val = float(row['open'])
+                    if open_val > 0:
+                        open_prices[symbol] = open_val
+        except Exception as e:
+            print(f"Notice: Extracting today's open prices: {e}")
 
-        return latest_prices
+        return open_prices
 
     def scan_market_and_track(self, scan_window_bars=100):
-        """Scans live & historical data feed, detects Strategy setups, and tracks positions."""
+        """Scans market data feed, detects Strategy setups, and tracks positions."""
         raw_df = load_smc_signals()
         df = compute_smc_features(raw_df)
         df = calculate_3to1_rr_levels(df)
         df = generate_10_strategies(df)
         
         recent_bars = df.groupby('symbol').tail(scan_window_bars).reset_index()
+        today_open_prices = self.fetch_todays_open_prices()
         new_signals_found = 0
         
         for _, row in recent_bars.iterrows():
             symbol = row['symbol']
             close_price = float(row['close'])
+            today_open = today_open_prices.get(symbol, float(row['open']))
             atr = float(row['atr'])
             bar_date = str(row['day'])[:10]
             
@@ -146,7 +140,7 @@ class EliteTradeTrackerAgent:
                             'position_size': position_size,
                             'status': 'ACTIVE',
                             'perf_status': 'ACTIVE',
-                            'current_price': close_price,
+                            'current_price': today_open,
                             'unrealized_r': 0.0,
                             'est_profit_pct': 0.0,
                             'est_profit_amt': 0.0
@@ -154,7 +148,7 @@ class EliteTradeTrackerAgent:
                         
                         self.active_trades[trade_id] = new_trade
                         new_signals_found += 1
-                        print(f"⚡ NEW TRADE SIGNAL: [{symbol}] | Strategy: {strat_info['name']} | Entry: {close_price}")
+                        print(f"⚡ NEW TRADE SIGNAL: [{symbol}] | Strategy: {strat_info['name']} | Entry: {close_price} | Today Open: {today_open}")
                         
                         if self.enable_telegram:
                             msg = format_new_trade_alert(new_trade)
@@ -164,9 +158,9 @@ class EliteTradeTrackerAgent:
         return self.active_trades
 
     def evaluate_open_positions(self, live_prices=None):
-        """Evaluates active trades against live ltp prices, calculating Estimated Profit % & R-Yield."""
+        """Evaluates active trades against Today's Opening Price (open)."""
         if live_prices is None:
-            live_prices = self.fetch_live_prices()
+            live_prices = self.fetch_todays_open_prices()
             
         closed_trades = []
         
@@ -183,7 +177,7 @@ class EliteTradeTrackerAgent:
             
             atr_dist = abs(entry - sl)
             
-            # Calculate Profit % and $
+            # Calculate Profit % and $ based on Today's Opening Price vs Signal Entry Price
             if direction == 'LONG':
                 pnl_per_share = curr_price - entry
                 pnl_pct = (pnl_per_share / entry) * 100
